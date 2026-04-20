@@ -1,29 +1,22 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Procurement Spend Intelligence Engine v0.4</title>
+<title>PSIE v0.5 — Dataset-Agnostic Engine</title>
 <!--
-  CHART.JS LOCAL PACKAGING INSTRUCTIONS (for confidential client delivery)
-  -------------------------------------------------------------------------
-  This file currently loads Chart.js from CDN:
-    https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js
-
-  To remove the CDN dependency:
-  1. Download chart.umd.js from: https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js
-  2. Save it alongside this HTML file as: chart.umd.js
-  3. Replace the <script src="https://..."> tag below with:
-     <script src="chart.umd.js"></script>
-  4. The file is then fully self-contained and works offline / air-gapped.
-  Note: chart.umd.js is ~200KB and may be distributed with client deliverables
-  provided you comply with the Chart.js MIT licence (included in the file header).
+  CHART.JS LOCAL PACKAGING (for air-gapped / confidential client delivery):
+  1. Download: https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js
+  2. Save alongside this file as chart.umd.js
+  3. Replace the <script src="https://..."> below with: <script src="chart.umd.js"></script>
+  Chart.js is MIT licensed. The file (~200KB) may be distributed with client deliverables.
 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#ffffff;--bg2:#f7f7f5;--bg3:#f0efec;
+  --bg:#fff;--bg2:#f7f7f5;--bg3:#f0efec;
   --text:#1a1a18;--text2:#5f5e5a;--text3:#888780;
   --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.25);
   --r:8px;--rl:12px;
@@ -33,52 +26,109 @@
   --red:#A32D2D;--red-l:#FCEBEB;--red-m:#F7C1C1;
   --coral:#D85A30;--coral-l:#FAECE7;--coral-m:#F5C4B3;
 }
-@media(prefers-color-scheme:dark){
-  :root{
-    --bg:#1e1e1c;--bg2:#2a2a28;--bg3:#333330;
-    --text:#f0efe8;--text2:#b4b2a9;--text3:#888780;
-    --border:rgba(255,255,255,0.12);--border2:rgba(255,255,255,0.28);
-    --blue-l:#0c2a4a;--blue-m:#0c447c;
-    --green-l:#0a2a1a;--green-m:#085041;
-    --amber-l:#2a1a04;--amber-m:#633806;
-    --red-l:#2a0a0a;--red-m:#791f1f;
-    --coral-l:#2a1008;--coral-m:#993c1d;
-  }
-}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1e1e1c;--bg2:#2a2a28;--bg3:#333330;
+  --text:#f0efe8;--text2:#b4b2a9;--text3:#888780;
+  --border:rgba(255,255,255,0.12);--border2:rgba(255,255,255,0.28);
+  --blue-l:#0c2a4a;--blue-m:#0c447c;
+  --green-l:#0a2a1a;--green-m:#085041;
+  --amber-l:#2a1a04;--amber-m:#633806;
+  --red-l:#2a0a0a;--red-m:#791f1f;
+  --coral-l:#2a1008;--coral-m:#993c1d;
+}}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg3);color:var(--text);font-size:15px;line-height:1.5;min-height:100vh}
 
-/* TOP BAR */
-.topbar{background:var(--bg);border-bottom:0.5px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px}
+/* ─── TOP BAR ─── */
+.topbar{background:var(--bg);border-bottom:0.5px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:48px;position:sticky;top:0;z-index:100;gap:8px;flex-wrap:wrap}
 .tbl{display:flex;align-items:center;gap:10px}
-.logo{width:26px;height:26px;background:var(--blue);border-radius:6px;display:flex;align-items:center;justify-content:center}
-.logo svg{width:14px;height:14px;fill:white}
-.pname{font-size:13px;font-weight:700;letter-spacing:-0.01em}
+.logo{width:24px;height:24px;background:var(--blue);border-radius:5px;display:flex;align-items:center;justify-content:center}
+.logo svg{width:13px;height:13px;fill:white}
+.pname{font-size:13px;font-weight:700;letter-spacing:-.01em}
 .pver{font-size:10px;color:var(--text3);background:var(--bg2);padding:2px 6px;border-radius:100px;border:0.5px solid var(--border)}
-.client-badge{font-size:11px;color:var(--blue);font-weight:600;background:var(--blue-l);padding:3px 8px;border-radius:100px;border:0.5px solid var(--blue-m)}
 .tbr{display:flex;align-items:center;gap:8px}
-.analyst-badge{font-size:10px;color:var(--text3);padding:2px 7px;border-radius:100px;border:0.5px solid var(--border)}
+.anl-badge{font-size:10px;color:var(--text3);padding:2px 7px;border-radius:100px;border:0.5px solid var(--border)}
 
-/* LAYOUT */
-.shell{display:flex;min-height:calc(100vh - 52px)}
-.sidebar{width:210px;flex-shrink:0;background:var(--bg);border-right:0.5px solid var(--border);padding:1.25rem 0;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto}
-.sidebar-lbl{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);padding:0 1rem;margin-bottom:3px;display:block}
-.nav-item{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:var(--r);font-size:13px;color:var(--text2);cursor:pointer;user-select:none;transition:all .12s;margin:1px 6px}
-.nav-item:hover{background:var(--bg2);color:var(--text)}
-.nav-item.active{background:var(--blue-l);color:var(--blue);font-weight:600}
-.nav-item svg{width:14px;height:14px;flex-shrink:0;opacity:.55}
-.nav-item.active svg{opacity:1}
+/* ─── DATASET CONTEXT STRIP ─── */
+/* Persistent sub-header below topbar. Shows active run context only. */
+.ctx-strip{
+  background:var(--bg2);
+  border-bottom:0.5px solid var(--border);
+  padding:0 1.5rem;
+  height:32px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:sticky;
+  top:48px;
+  z-index:99;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.ctx-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);flex-shrink:0}
+.ctx-value{font-size:11px;color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctx-switcher{display:flex;align-items:center;gap:4px}
+.run-btn{font-size:11px;padding:2px 8px;border-radius:100px;border:0.5px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:all .12s;font-family:inherit}
+.run-btn:hover{background:var(--bg3);color:var(--text)}
+.run-btn.active{background:var(--blue-l);color:var(--blue);border-color:var(--blue-m);font-weight:600}
+
+/* ─── LAYOUT ─── */
+.shell{display:flex;min-height:calc(100vh - 80px)}
+.sidebar{width:210px;flex-shrink:0;background:var(--bg);border-right:0.5px solid var(--border);padding:1rem 0;position:sticky;top:80px;height:calc(100vh - 80px);overflow-y:auto}
+.slbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);padding:0 1rem;margin-bottom:3px;display:block;margin-top:.75rem}
+.slbl:first-child{margin-top:0}
+.ni{display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:var(--r);font-size:13px;color:var(--text2);cursor:pointer;user-select:none;transition:all .12s;margin:1px 6px}
+.ni:hover{background:var(--bg2);color:var(--text)}
+.ni.active{background:var(--blue-l);color:var(--blue);font-weight:600}
+.ni svg{width:13px;height:13px;flex-shrink:0;opacity:.55}
+.ni.active svg{opacity:1}
+.ni-diag{opacity:.65}
 .sdiv{height:0.5px;background:var(--border);margin:.75rem 1rem}
-.smeta{padding:0 1rem;font-size:11px;color:var(--text3);line-height:1.6}
-.smeta b{color:var(--text2);display:block;margin-bottom:2px}
-
-/* MAIN */
 .main{flex:1;padding:1.75rem;min-width:0}
 .page{display:none}.page.active{display:block}
 .ph{margin-bottom:1.5rem}
-.ph-title{font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:3px}
+.ph-title{font-size:20px;font-weight:700;letter-spacing:-.02em;margin-bottom:3px}
 .ph-sub{font-size:13px;color:var(--text2)}
 
-/* METRICS */
+/* ─── CONFIDENCE BLOCK ─── */
+/* Opens every heuristic page. Engine output — neutral tone. */
+.conf-block{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1rem 1.25rem;margin-bottom:1.25rem}
+.conf-row{display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.conf-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);min-width:90px}
+.conf-bar-wrap{flex:1;min-width:120px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.conf-bar{height:100%;border-radius:3px}
+.conf-pct{font-size:12px;font-weight:700;min-width:32px;color:var(--text)}
+.conf-status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:6px;margin-top:8px}
+.conf-status-item{display:flex;align-items:center;gap:7px;font-size:11px;padding:5px 8px;border-radius:var(--r);background:var(--bg2)}
+.cs-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.cs-label{color:var(--text2);flex:1}
+.cs-reason{color:var(--text3);font-size:10px;margin-top:1px}
+
+/* ─── ANALYST NOTE PANEL ─── */
+/* Visually distinct. Separated from engine findings. */
+.analyst-note{
+  background:var(--amber-l);
+  border:0.5px solid var(--amber-m);
+  border-radius:var(--rl);
+  padding:1rem 1.25rem;
+  margin-bottom:1rem;
+  position:relative;
+}
+.analyst-note-label{
+  font-size:10px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.07em;
+  color:var(--amber);
+  margin-bottom:6px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.analyst-note-label::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0}
+.analyst-note-body{font-size:12px;color:var(--text);line-height:1.7}
+.analyst-note-body b{font-weight:700}
+
+/* ─── COMPONENT STYLES ─── */
 .mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1.5rem}
 .metric{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:12px 14px}
 .metric .lbl{font-size:10px;font-weight:700;color:var(--text3);margin-bottom:5px;letter-spacing:.04em;text-transform:uppercase}
@@ -86,16 +136,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,san
 .metric .sub{font-size:11px;color:var(--text3);margin-top:2px}
 .metric .warn{font-size:11px;color:var(--coral);margin-top:2px;font-weight:600}
 .metric .ok{font-size:11px;color:var(--green);margin-top:2px;font-weight:600}
-
-/* CARDS */
 .card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1.25rem 1.5rem;margin-bottom:1rem}
-.card-title{font-size:13px;font-weight:700;margin-bottom:.75rem;letter-spacing:-.01em}
+.card-title{font-size:13px;font-weight:700;margin-bottom:.75rem}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
-@media(max-width:720px){.two-col{grid-template-columns:1fr}}
-.chart-wrap{position:relative;width:100%}
-.chart-lbl{font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
-
-/* PILLS */
+@media(max-width:760px){.two-col{grid-template-columns:1fr}}
+.cw{position:relative;width:100%}
+.clbl{font-size:10px;color:var(--text3);margin-bottom:6px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
 .pill{font-size:11px;padding:2px 8px;border-radius:100px;white-space:nowrap;font-weight:600}
 .phi{background:var(--coral-l);color:var(--coral)}
 .pmd{background:var(--amber-l);color:var(--amber)}
@@ -103,18 +149,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,san
 .pbl{background:var(--blue-l);color:var(--blue)}
 .pgr{background:var(--bg2);color:var(--text2);border:0.5px solid var(--border)}
 .pdis{background:var(--red-l);color:var(--red);font-weight:700}
-
-/* HEURISTICS */
-.heuristic{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);margin-bottom:10px;overflow:hidden}
-.hh{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;user-select:none;transition:background .12s}
-.hh:hover{background:var(--bg2)}
-.hnum{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
-.htitle{flex:1;font-size:13px;font-weight:600}
-.hmeta{display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0}
-.chev{font-size:10px;color:var(--text3);transition:transform .2s;margin-left:2px}
-.chev.open{transform:rotate(180deg)}
-.hbody{display:none;padding:0 14px 14px;border-top:0.5px solid var(--border)}
-.hbody.open{display:block}
+.disabled-output{background:var(--red-l);border:0.5px solid var(--red-m);border-radius:var(--rl);padding:1rem 1.25rem;margin-bottom:1rem}
+.disabled-output .do-title{font-size:12px;font-weight:700;color:var(--red);margin-bottom:5px}
+.disabled-output .do-body{font-size:12px;color:var(--text);line-height:1.65}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:8px 10px;font-weight:700;font-size:10px;color:var(--text3);border-bottom:0.5px solid var(--border);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+td{padding:8px 10px;border-bottom:0.5px solid var(--border);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--bg2)}
 .trigger{background:var(--bg2);padding:9px 12px;margin:10px 0;font-size:12px;color:var(--text2);border-left:3px solid var(--blue);border-radius:0 var(--r) var(--r) 0;line-height:1.65}
 .trigger b{color:var(--text)}
 .bg4{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-bottom:10px}
@@ -132,898 +175,940 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,san
 .bl ul{padding-left:13px}
 .hfooter{display:flex;gap:8px;flex-wrap:wrap;padding-top:9px;border-top:0.5px solid var(--border);margin-top:4px;align-items:center}
 .saving{font-size:12px;font-weight:700;background:var(--bg2);border-radius:var(--r);padding:3px 9px;border:0.5px solid var(--border)}
+.heuristic{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);margin-bottom:10px;overflow:hidden}
+.hh{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;user-select:none;transition:background .12s}
+.hh:hover{background:var(--bg2)}
+.hnum{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.htitle{flex:1;font-size:13px;font-weight:600}
+.hmeta{display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0}
+.chev{font-size:10px;color:var(--text3);transition:transform .2s}
+.chev.open{transform:rotate(180deg)}
+.hbody{display:none;padding:0 14px 14px;border-top:0.5px solid var(--border)}
+.hbody.open{display:block}
+.pv-item{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:8px}
+.pv-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.pv-title{font-size:12px;font-weight:700}
+.pv-body{font-size:11px;color:var(--text2);line-height:1.6}
+.fact{font-size:11px;color:var(--text3);margin-top:5px;font-style:italic}
+.disclaimer{background:var(--bg2);padding:12px 14px;font-size:11px;color:var(--text2);line-height:1.65;border-left:3px solid var(--border2);border-radius:0 var(--r) var(--r) 0;margin-top:1.5rem}
+.disclaimer b{color:var(--text)}
+.diag-notice{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rl);padding:1rem 1.25rem;margin-bottom:1.5rem;font-size:12px;color:var(--text2);line-height:1.65;border-left:3px solid var(--border2);border-radius:0 var(--rl) var(--rl) 0}
+.diag-notice b{color:var(--text)}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+.compare-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1rem 1.25rem}
+.compare-name{font-size:12px;font-weight:700;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:0.5px solid var(--border)}
+.compare-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:0.5px solid var(--border)}
+.compare-row:last-child{border-bottom:none}
+.compare-label{color:var(--text2)}
+.compare-val{font-weight:600}
+.compare-val.ok{color:var(--green)}
+.compare-val.warn{color:var(--coral)}
 
-/* TABLES */
-.tbl-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:12px}
-th{text-align:left;padding:8px 10px;font-weight:700;font-size:10px;color:var(--text3);border-bottom:0.5px solid var(--border);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
-td{padding:8px 10px;border-bottom:0.5px solid var(--border);vertical-align:top}
-tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:var(--bg2)}
-.td-mono{font-family:monospace;font-size:11px}
-
-/* ACTION PLAN */
-.ap-table{width:100%;border-collapse:collapse;font-size:12px}
-.ap-table th{text-align:left;padding:8px 10px;font-weight:700;font-size:10px;color:var(--text3);border-bottom:0.5px solid var(--border);letter-spacing:.06em;text-transform:uppercase}
-.ap-table td{padding:8px 10px;border-bottom:0.5px solid var(--border);vertical-align:top}
-.ap-table tbody tr:hover td{background:var(--bg2)}
-.ap-table tr:last-child td{border-bottom:none}
-.owner-p{color:var(--blue);background:var(--blue-l);padding:1px 6px;border-radius:100px;font-size:10px;font-weight:700;white-space:nowrap}
-.owner-f{color:var(--amber);background:var(--amber-l);padding:1px 6px;border-radius:100px;font-size:10px;font-weight:700;white-space:nowrap}
-.owner-o{color:var(--green);background:var(--green-l);padding:1px 6px;border-radius:100px;font-size:10px;font-weight:700;white-space:nowrap}
-
-/* EXEC OUTPUT */
-.eq{font-size:15px;font-weight:700;margin:1.5rem 0 .5rem;padding-bottom:.5rem;border-bottom:0.5px solid var(--border);letter-spacing:-.01em}
-.eq:first-child{margin-top:0}
-.eb{font-size:13px;color:var(--text2);line-height:1.75;margin-bottom:.5rem}
-.eb b{color:var(--text);font-weight:600}
-.prize-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:1rem 0}
-.prize-i{border-radius:var(--r);padding:12px 14px}
-.prize-i .pl{font-size:10px;font-weight:700;margin-bottom:3px;letter-spacing:.04em;text-transform:uppercase}
-.prize-i .pv{font-size:19px;font-weight:700;letter-spacing:-.02em}
-.prize-i .pc{font-size:10px;margin-top:3px}
-.act-row{display:flex;gap:12px;padding:12px 0;border-bottom:0.5px solid var(--border)}
-.act-row:last-child{border-bottom:none}
-.act-n{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
-.act-body{flex:1}
-.act-title{font-size:13px;font-weight:700;margin-bottom:3px}
-.act-desc{font-size:12px;color:var(--text2);line-height:1.6}
-
-/* SLIDES */
-.slide{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1.75rem 2rem;margin-bottom:1rem;position:relative}
-.slide-num{position:absolute;top:1.25rem;right:1.5rem;font-size:11px;color:var(--text3);font-weight:700}
-.slide-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin-bottom:.5rem}
-.slide-title{font-size:22px;font-weight:800;letter-spacing:-.03em;line-height:1.2;margin-bottom:1rem}
-.slide-bullets{list-style:none;padding:0}
-.slide-bullets li{font-size:13px;color:var(--text2);padding:5px 0 5px 16px;position:relative;line-height:1.6;border-bottom:0.5px solid var(--border)}
-.slide-bullets li:last-child{border-bottom:none}
-.slide-bullets li::before{content:'—';position:absolute;left:0;color:var(--text3)}
-.slide-bullets li b{color:var(--text);font-weight:600}
-.slide-note{font-size:11px;color:var(--text3);margin-top:1rem;font-style:italic;padding-top:.75rem;border-top:0.5px solid var(--border)}
-.slide-stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:.75rem 0}
-.slide-stat{background:var(--bg2);border-radius:var(--r);padding:10px 12px;text-align:center}
-.slide-stat .sv{font-size:22px;font-weight:800;letter-spacing:-.02em}
-.slide-stat .sl{font-size:10px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:.04em;font-weight:700}
-
-/* EMAIL SUMMARY */
-.email-box{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rl);padding:1.5rem 1.75rem;font-size:13px;line-height:1.75;color:var(--text2)}
-.email-box h3{font-size:14px;font-weight:700;color:var(--text);margin:1rem 0 .25rem}
-.email-box h3:first-child{margin-top:0}
-.email-box ul{padding-left:16px;margin:.25rem 0}
-.email-box li{margin-bottom:3px}
-.email-box b{color:var(--text);font-weight:600}
-.email-header{background:var(--bg2);border-radius:var(--r);padding:10px 14px;margin-bottom:1rem;font-size:12px}
-.email-header .ef{color:var(--text3)}.email-header .ev{color:var(--text);font-weight:600}
-
-/* DISCLAIMER */
-.disclaimer{background:var(--bg2);border-radius:0 var(--r) var(--r) 0;padding:12px 14px;font-size:11px;color:var(--text2);line-height:1.65;border-left:3px solid var(--border2)}
-.disclaimer b{color:var(--text);font-weight:700}
-
-/* VERIFICATION */
-.check-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:12px}
-.check-row:last-child{border-bottom:none}
-.check-ok{color:var(--green);font-weight:700;font-size:14px;flex-shrink:0}
-.check-label{flex:1;color:var(--text2)}
-.check-val{font-family:monospace;font-size:11px;color:var(--text);font-weight:600}
-.check-note{font-size:11px;color:var(--text3);font-style:italic}
-
-/* SANITY */
-.sanity-disabled{background:var(--red-l);border:1px solid var(--red-m);border-radius:var(--r);padding:12px 14px;margin-bottom:1rem}
-.sanity-title{font-size:12px;font-weight:700;color:var(--red);margin-bottom:5px}
-.sanity-body{font-size:12px;color:var(--text);line-height:1.6}
-
-/* FOOTER */
-.footer{background:var(--bg);border-top:0.5px solid var(--border);padding:14px 1.5rem;font-size:11px;color:var(--text3);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+/* ─── FOOTER ─── */
+.footer{background:var(--bg);border-top:0.5px solid var(--border);padding:10px 1.5rem;font-size:11px;color:var(--text3);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .footer b{color:var(--text2)}
-
-/* LEGEND */
-.leg{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
-.leg-i{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2)}
-.leg-sq{width:10px;height:10px;border-radius:2px;flex-shrink:0}
-
-/* PRINT */
-@media print{.sidebar,.topbar,.footer{display:none}.shell{display:block}.main{padding:0}.page{display:block!important;page-break-after:always}}
+.footer-ds{font-size:11px;color:var(--text2)}
 </style>
 </head>
 <body>
 
-<!-- TOP BAR -->
+<!-- ═══════════════════════════════════════════════════
+     TOP BAR — Engine identity only. No dataset content.
+     ═══════════════════════════════════════════════════ -->
 <div class="topbar">
   <div class="tbl">
     <div class="logo"><svg viewBox="0 0 16 16"><path d="M2 3h12v2H2V3zm0 4h8v2H2V7zm0 4h10v2H2v-2z"/></svg></div>
-    <span class="pname">Spend Intelligence Engine</span>
-    <span class="pver">v0.4</span>
-    <span class="client-badge" id="clientBadge">Client: [CLIENT NAME]</span>
+    <span class="pname">Procurement Spend Intelligence Engine</span>
+    <span class="pver">v0.5</span>
   </div>
   <div class="tbr">
-    <span style="font-size:11px;color:var(--text3)" id="datasetLabel">Dataset: [YEAR] · Prepared by PSL</span>
-    <span class="analyst-badge">Analyst-operated · Not self-serve</span>
+    <span class="anl-badge">Analyst-operated · Not self-serve</span>
+    <span class="anl-badge">Prepared by PSL</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     DATASET CONTEXT STRIP — Active run context.
+     One dataset active at a time. Switch = new run.
+     Dataset name never appears in navigation.
+     ═══════════════════════════════════════════════════ -->
+<div class="ctx-strip">
+  <span class="ctx-label">Active run</span>
+  <span class="ctx-value" id="ctx-value">
+    Kingsley Healthcare · FY2024/25 · GBP · 51 sites · 47 entities · Analyst: [name]
+  </span>
+  <div class="ctx-switcher">
+    <span style="font-size:10px;color:var(--text3);margin-right:4px">Switch run:</span>
+    <button class="run-btn active" onclick="switchRun('kingsley',this)">Run A — Kingsley</button>
+    <button class="run-btn" onclick="switchRun('aidan',this)">Run B — Aidan Strain</button>
   </div>
 </div>
 
 <div class="shell">
 
-<!-- SIDEBAR -->
+<!-- ═══════════════════════════════════════════════════
+     SIDEBAR — Engine navigation. No client/dataset labels.
+     Structure is identical regardless of active dataset.
+     ═══════════════════════════════════════════════════ -->
 <div class="sidebar">
-  <div style="padding:0 6px 8px">
-    <span class="sidebar-lbl">Analysis</span>
-    <div class="nav-item active" onclick="showPage('overview',this)">
-      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 1h6v6H1V1zm0 8h6v6H1V9zm8-8h6v6H9V1zm0 8h6v6H9V9z"/></svg>Overview
-    </div>
-    <div class="nav-item" onclick="showPage('verify',this)">
-      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M13 2L6 9 3 6 1 8l5 5 9-9z"/></svg>Verification checks
-    </div>
-    <div class="nav-item" onclick="showPage('heuristics',this)">
-      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm1 10.5H7v-2h2v2zm0-4H7V4.5h2V7.5z"/></svg>6 Heuristics
-    </div>
-    <div class="nav-item" onclick="showPage('logistics',this)">
-      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 4h10v2H1V4zm0 3h8v2H1V7zm0 3h6v2H1v-2zm13-5l-4 5V5h2V2h2v3z"/></svg>Logistics audit
-    </div>
-    <div class="nav-item" onclick="showPage('dataquality',this)">
-      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L1 14h14L8 1zm-1 5h2v4H7V6zm0 5h2v2H7v-2z"/></svg>Data quality
-    </div>
-    <div class="nav-item" onclick="showPage('actionplan',this)">
-      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v2H2V2zm0 4h9v2H2V6zm0 4h6v2H2v-2zm11-1l-5 5-2-2 1.4-1.4L13 13.2l3.6-3.6z"/></svg>Action plan
-    </div>
-    <div class="nav-item" onclick="showPage('executive',this)">
-      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v2H2V2zm0 4h12v2H2V6zm0 4h8v2H2v-2z"/></svg>Executive output
-    </div>
+  <span class="slbl">Engine outputs</span>
+  <div class="ni active" onclick="go('overview',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 1h6v6H1V1zm8 0h6v6H9V1zM1 9h6v6H1V9zm8 0h6v6H9V9z"/></svg>
+    Spend overview
   </div>
-  <div class="sdiv"></div>
-  <div style="padding:0 6px 8px">
-    <span class="sidebar-lbl">Client deliverables</span>
-    <div class="nav-item" onclick="showPage('slides',this)">
-      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 2h14v10H1V2zm2 2v6h10V4H3zm-2 9h14v1H1v-1z"/></svg>5-slide narrative
-    </div>
-    <div class="nav-item" onclick="showPage('email',this)">
-      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 3h14v10H1V3zm1 1v1.5l6 3.5 6-3.5V4H2zm0 3v5h12V7L8 10.5 2 7z"/></svg>Executive summary
-    </div>
-    <div class="nav-item" onclick="showPage('spendcube',this)">
-      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L1 5v6l7 4 7-4V5L8 1zm0 2.2L13 6.5 8 9.8 3 6.5 8 3.2zM2 7.3l5 2.9V14L2 11.1V7.3zm7 2.9l5-2.9v3.8L9 14V10.2z"/></svg>Spend cube
-    </div>
+  <div class="ni" onclick="go('verification',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M13 2L6 9 3 6 1 8l5 5 9-9z"/></svg>
+    Verification checks
   </div>
+  <div class="ni" onclick="go('spend-cube',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L1 5v6l7 4 7-4V5L8 1zm0 2.2L13 6.5 8 9.8 3 6.5 8 3.2zM2 7.3l5 2.9V14L2 11.1V7.3zm7 2.9l5-2.9v3.8L9 14V10.2z"/></svg>
+    Spend cube
+  </div>
+
+  <span class="slbl">Heuristics H1–H6</span>
+  <div class="ni" onclick="go('h1',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1C5.24 1 3 3.24 3 6c0 4 5 9 5 9s5-5 5-9c0-2.76-2.24-5-5-5zm0 7a2 2 0 110-4 2 2 0 010 4z"/></svg>
+    Site cube — H1
+  </div>
+  <div class="ni" onclick="go('h2',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 13l3-5 3 3 3-6 4 8H1z"/></svg>
+    YoY trend — H2
+  </div>
+  <div class="ni" onclick="go('h3',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 4h14v2H1V4zm0 3h14v2H1V7zm0 3h14v2H1v-2z"/></svg>
+    Consolidation — H3
+  </div>
+  <div class="ni" onclick="go('h4',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 8h4v5H3V8zm3-5h4v10H6V3zm3 3h4v7h-4V6z"/></svg>
+    Price variance — H4
+  </div>
+  <div class="ni" onclick="go('h5',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v3H2V2zm0 5h8v3H2V7zm0 5h6v2H2v-2z"/></svg>
+    Order batching — H5
+  </div>
+  <div class="ni" onclick="go('h6',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 4h2v8H2V4zm5-2h2v12H7V2zm5 3h2v6h-2V5z"/></svg>
+    Logistics audit — H6
+  </div>
+
+  <span class="slbl">Outputs</span>
+  <div class="ni" onclick="go('action-plan',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v2H2V2zm0 4h9v2H2V6zm0 4h6v2H2v-2zm11-1l-5 5-2-2 1.4-1.4L13 13.2l3.6-3.6z"/></svg>
+    Action plan
+  </div>
+  <div class="ni" onclick="go('data-quality',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L1 14h14L8 1zm-1 5h2v4H7V6zm0 5h2v2H7v-2z"/></svg>
+    Data quality
+  </div>
+  <div class="ni" onclick="go('executive',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v2H2V2zm0 4h12v2H2V6zm0 4h8v2H2v-2z"/></svg>
+    Executive output
+  </div>
+
   <div class="sdiv"></div>
-  <div class="smeta"><b>Current dataset</b>[CLIENT NAME] · [YEAR]<br>18,703 lines · 732 suppliers<br>£59.2M gross spend</div>
+  <span class="slbl">Diagnostics</span>
+  <div class="ni ni-diag" onclick="go('diagnostics',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 1h6v14H1V1zm8 0h6v14H9V1z"/></svg>
+    Run comparison
+  </div>
+  <div class="ni ni-diag" onclick="go('enrichment',this)">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm1 10.5H7v-2h2v2zm0-4H7V4.5h2V7.5z"/></svg>
+    Enrichment map
+  </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════
+     MAIN CONTENT AREA
+     All pages follow identical structure across runs.
+     ═══════════════════════════════════════════════════ -->
 <div class="main">
 
-<!-- ======== OVERVIEW ======== -->
+<!-- ─── SPEND OVERVIEW ─── -->
 <div class="page active" id="page-overview">
-  <div class="ph"><div class="ph-title">Spend overview</div><div class="ph-sub">FY2024 · All verification checks passed · All currencies included · Analyst-reviewed</div></div>
-  <div class="mg">
-    <div class="metric"><div class="lbl">Total gross spend</div><div class="val">£59.2M</div><div class="sub">FY2024 · all currencies</div></div>
-    <div class="metric"><div class="lbl">Invoice lines</div><div class="val">18,703</div><div class="sub">10,065 unique refs</div></div>
-    <div class="metric"><div class="lbl">Active suppliers</div><div class="val">732</div><div class="sub">180 one-off (24.6%)</div></div>
-    <div class="metric"><div class="lbl">Unclassified spend</div><div class="val">61.1%</div><div class="warn">Primary data gap</div></div>
-    <div class="metric"><div class="lbl">Sub-£500 invoices</div><div class="val">53.5%</div><div class="warn">AP cost ~£135K/yr</div></div>
-    <div class="metric"><div class="lbl">Zero-VAT spend</div><div class="val">72.4%</div><div class="warn">£42.9M — flag for review</div></div>
-    <div class="metric"><div class="lbl">H2 vs H1</div><div class="val">−20%</div><div class="sub">£32.9M vs £26.3M</div></div>
-    <div class="metric"><div class="lbl">Price data flags</div><div class="val">480</div><div class="warn">Unit price &lt;£0.01 — disabled</div></div>
+  <div class="ph">
+    <div class="ph-title">Spend overview</div>
+    <div class="ph-sub">Core spend metrics for the active run. All figures drawn directly from source data. All verification checks passed before this output was generated.</div>
   </div>
-  <div class="card"><div class="chart-lbl">Monthly spend FY2024 (£ gross)</div><div class="chart-wrap" style="height:210px"><canvas id="monthlyChart"></canvas></div></div>
-  <div class="two-col">
-    <div class="card"><div class="chart-lbl">Geographic spread (entity type proxy)</div><div class="chart-wrap" style="height:200px"><canvas id="regionChart"></canvas></div></div>
-    <div class="card"><div class="chart-lbl">Heuristic map — impact vs. data readiness</div><div class="chart-wrap" style="height:200px"><canvas id="radarChart"></canvas></div></div>
-  </div>
-</div>
 
-<!-- ======== VERIFICATION ======== -->
-<div class="page" id="page-verify">
-  <div class="ph"><div class="ph-title">Verification checks</div><div class="ph-sub">Six independent checks run against source data before any analysis. All passed.</div></div>
-  <div class="card">
-    <div class="check-row"><span class="check-ok">✓</span><span class="check-label">Total gross spend</span><span class="check-val">£59,189,035.91</span><span class="check-note">Pivot sum of "Sum of Gross" · exact match</span></div>
-    <div class="check-row"><span class="check-ok">✓</span><span class="check-label">Invoice lines (row count)</span><span class="check-val">18,703</span><span class="check-note">COUNT of all rows in source file · exact match</span></div>
-    <div class="check-row"><span class="check-ok">✓</span><span class="check-label">Unique suppliers (DISTINCT SupplierName)</span><span class="check-val">732</span><span class="check-note">DISTINCTCOUNT of SupplierName field · exact match</span></div>
-    <div class="check-row"><span class="check-ok">✓</span><span class="check-label">Zero-VAT share (Sum Gross where VAT=0 ÷ total)</span><span class="check-val">72.43%</span><span class="check-note">= £42,872,679 ÷ £59,189,036 · exact match</span></div>
-    <div class="check-row"><span class="check-ok">✓</span><span class="check-label">Top 10 supplier share</span><span class="check-val">25.64%</span><span class="check-note">Sum of top 10 by gross ÷ total · exact match</span></div>
-    <div class="check-row"><span class="check-ok">✓</span><span class="check-label">Embedded logistics keyword spend</span><span class="check-val">£1,257,184</span><span class="check-note">Description contains: delivery / carriage / freight / transport / shipping · see Logistics Audit tab for breakdown</span></div>
-  </div>
-  <div class="card" style="margin-top:.5rem">
-    <div class="card-title">How to re-run these checks independently</div>
-    <table><thead><tr><th>Check</th><th>Excel formula (column letters may vary)</th></tr></thead>
-    <tbody>
-      <tr><td>Total spend</td><td class="td-mono">=SUM([Sum of Gross])</td></tr>
-      <tr><td>Invoice lines</td><td class="td-mono">=COUNTA([SupplierReference])</td></tr>
-      <tr><td>Unique suppliers</td><td class="td-mono">=SUMPRODUCT(1/COUNTIF([SupplierName],[SupplierName]))</td></tr>
-      <tr><td>Zero-VAT share</td><td class="td-mono">=SUMIF([Sum of Vat],0,[Sum of Gross])/SUM([Sum of Gross])</td></tr>
-      <tr><td>Top 10 share</td><td class="td-mono">Pivot table, sort desc, sum top 10 ÷ grand total</td></tr>
-      <tr><td>Embedded logistics</td><td class="td-mono">=SUMIF([Description],"*delivery*",...) + repeat for each keyword</td></tr>
-    </tbody></table>
-  </div>
-</div>
-
-<!-- ======== HEURISTICS ======== -->
-<div class="page" id="page-heuristics">
-  <div class="ph"><div class="ph-title">6 embedded procurement heuristics</div><div class="ph-sub">Each heuristic separates evidence, assumptions, and human validation requirements. No action should be taken without completing the validation steps.</div></div>
-
-  <div class="heuristic">
-    <div class="hh" onclick="toggleH(this)">
-      <div class="hnum" style="background:var(--blue-l);color:var(--blue)">1</div>
-      <div class="htitle">Site-by-site spend behaviour</div>
-      <div class="hmeta"><span class="pill phi">Impact: High</span><span class="pill pmd">Effort: M</span><span class="pill pbl">90+ days</span></div>
-      <span class="chev">▼</span>
+  <!-- Run A: Kingsley -->
+  <div class="run-content run-kingsley">
+    <div class="mg">
+      <div class="metric"><div class="lbl">Total extended spend</div><div class="val">£24.8M</div><div class="sub">307,820 line items</div></div>
+      <div class="metric"><div class="lbl">Active suppliers</div><div class="val">1,374</div><div class="sub">Unique SupplierName</div></div>
+      <div class="metric"><div class="lbl">Sites / branches</div><div class="val">51</div><div class="ok">Dimension present</div></div>
+      <div class="metric"><div class="lbl">Legal entities</div><div class="val">47</div><div class="ok">Dimension present</div></div>
+      <div class="metric"><div class="lbl">No-PO lines</div><div class="val">18.1%</div><div class="warn">55,758 lines</div></div>
+      <div class="metric"><div class="lbl">Unit cost coverage</div><div class="val">94.4%</div><div class="ok">H4 conditionally active</div></div>
+      <div class="metric"><div class="lbl">Zero unit cost rows</div><div class="val">17,086</div><div class="warn">Capex/construction</div></div>
+      <div class="metric"><div class="lbl">Currency</div><div class="val">GBP</div><div class="ok">Single — no FX needed</div></div>
     </div>
-    <div class="hbody">
-      <div class="trigger"><b>Trigger:</b> 4 geographic regions with no site/BU dimension in data. R&amp;M Europe: 4 name variants (RMFS001/003). Robert Craig: 3 variants. 30% of spend has no entity type signal. Cross-region pricing comparison not possible without FX normalisation.</div>
-      <div class="bg4">
-        <div class="bl bl-ev"><div class="bl-title">Evidence</div><ul><li>UK/Ireland: £21.4M, 278 suppliers</li><li>Benelux/DACH: £10.7M, 106 suppliers</li><li>Spain/Italy: £5.1M, 61 suppliers</li><li>Nordic/Baltic: £4.5M, 41 suppliers</li><li>R&amp;M Europe: 4 name variants for same code</li></ul></div>
-        <div class="bl bl-as"><div class="bl-title">Assumptions</div><ul><li>Entity type used as geography proxy — unreliable</li><li>Same supplier code = same commercial relationship (unconfirmed)</li><li>Regional differences reflect behaviour not volume (unproven)</li></ul></div>
-        <div class="bl bl-vl"><div class="bl-title">Validation required</div><ul><li>Request cost centre / site code from ERP</li><li>Confirm name variants are same legal entity</li><li>Determine whether regions share contracts</li><li>Establish FX normalisation approach</li></ul></div>
-        <div class="bl bl-ts"><div class="bl-title">Data needed to unlock</div><ul><li>Site/BU field from ERP extract</li><li>FX rate table (EUR/GBP/USD)</li><li>Supplier legal entity master</li></ul></div>
-      </div>
-      <div class="hfooter"><span class="saving">£0.3M–£1.2M potential — site data required first</span><span class="pill pgr">Cannot size without site dimension</span></div>
+    <div class="card"><div class="clbl">Monthly spend (£ extended amount)</div><div class="cw" style="height:200px"><canvas id="kMonthly"></canvas></div></div>
+    <div class="two-col">
+      <div class="card"><div class="clbl">Spend by category (top 10)</div><div class="cw" style="height:210px"><canvas id="kCat"></canvas></div></div>
+      <div class="card"><div class="clbl">Spend by entity (top 8)</div><div class="cw" style="height:210px"><canvas id="kEntity"></canvas></div></div>
     </div>
   </div>
 
-  <div class="heuristic">
-    <div class="hh" onclick="toggleH(this)">
-      <div class="hnum" style="background:var(--green-l);color:var(--green)">2</div>
-      <div class="htitle">Year-on-year spend trend</div>
-      <div class="hmeta"><span class="pill pmd">Impact: M</span><span class="pill plo">Effort: L</span><span class="pill pbl">0–30 days</span></div>
-      <span class="chev">▼</span>
+  <!-- Run B: Aidan Strain -->
+  <div class="run-content run-aidan" style="display:none">
+    <div class="mg">
+      <div class="metric"><div class="lbl">Total gross spend</div><div class="val">£59.2M</div><div class="sub">18,703 line items</div></div>
+      <div class="metric"><div class="lbl">Active suppliers</div><div class="val">732</div><div class="sub">Unique SupplierName</div></div>
+      <div class="metric"><div class="lbl">Sites / branches</div><div class="val">—</div><div class="warn">Dimension absent</div></div>
+      <div class="metric"><div class="lbl">Legal entities</div><div class="val">—</div><div class="warn">Dimension absent</div></div>
+      <div class="metric"><div class="lbl">No-PO lines</div><div class="val">Partial</div><div class="warn">PO coverage unclear</div></div>
+      <div class="metric"><div class="lbl">Unit cost coverage</div><div class="val">Corrupted</div><div class="warn">480 rows &lt;£0.01</div></div>
+      <div class="metric"><div class="lbl">Unclassified spend</div><div class="val">61.1%</div><div class="warn">£36.2M</div></div>
+      <div class="metric"><div class="lbl">Currency</div><div class="val">Multi</div><div class="warn">Unnormalised</div></div>
     </div>
-    <div class="hbody">
-      <div class="trigger"><b>Trigger:</b> H2 (£26.3M) is 20% below H1 (£32.9M). Q4 is 25.9% below Q1. Week 29 (mid-July) peak at £1.9M. No prior year for baseline. Cause of decline is not visible in the data.</div>
-      <div class="bg4">
-        <div class="bl bl-ev"><div class="bl-title">Evidence</div><ul><li>Q1: £17.1M → Q4: £12.7M (£4.4M within-year decline)</li><li>July spike then sustained lower spend Aug–Dec</li><li>Delivery charge volumes do not decline proportionally</li><li>No FY2023 data — direction unconfirmed</li></ul></div>
-        <div class="bl bl-as"><div class="bl-title">Assumptions</div><ul><li>Decline assumed to be project phasing — not validated</li><li>H1 weighting assumed normal — may be ramp-up</li><li>No seasonality model available</li></ul></div>
-        <div class="bl bl-vl"><div class="bl-title">Validation required</div><ul><li>Cross-reference against project delivery schedule</li><li>Confirm H2 decline is genuine, not off-system</li><li>Obtain FY2023 to establish trend direction</li></ul></div>
-        <div class="bl bl-ts"><div class="bl-title">Data needed</div><ul><li>FY2023 spend extract (same format)</li><li>Project milestone schedule</li><li>Budget vs. actual report</li></ul></div>
-      </div>
-      <div class="hfooter"><span class="saving">Diagnostic only — prize depends on cause</span><span class="pill pgr">No prior year — trend unconfirmed</span></div>
-    </div>
-  </div>
-
-  <div class="heuristic">
-    <div class="hh" onclick="toggleH(this)">
-      <div class="hnum" style="background:var(--coral-l);color:var(--coral)">3</div>
-      <div class="htitle">Supplier consolidation</div>
-      <div class="hmeta"><span class="pill phi">Impact: High</span><span class="pill phi">Effort: H</span><span class="pill pbl">90+ days</span></div>
-      <span class="chev">▼</span>
-    </div>
-    <div class="hbody">
-      <div class="trigger"><b>Trigger:</b> Cable ties from 15 suppliers. Transport: 146 suppliers for £545K (avg £3.7K). IT &amp; Software: 312 suppliers for £9.1M. Top 10 suppliers = 25.6% of spend. Sector best practice for comparable operations: 60–70% in top 10.</div>
-      <div class="bg4">
-        <div class="bl bl-ev"><div class="bl-title">Evidence</div><ul><li>15 suppliers for cable ties (single commodity)</li><li>IFS Courier: 992 lines at avg £27.85</li><li>180 one-off suppliers (24.6% of base)</li><li>IT: 312 suppliers, avg £29K each</li><li>Transport: 146 suppliers, avg £3.7K each</li></ul></div>
-        <div class="bl bl-as"><div class="bl-title">Assumptions</div><ul><li>Similar descriptions = equivalent specs — analyst must verify</li><li>No single-source dependency assumed (unconfirmed)</li><li>Volume leverage available — contract terms not visible</li><li>IT: some niche tools may be non-consolidatable</li></ul></div>
-        <div class="bl bl-vl"><div class="bl-title">Validation required</div><ul><li>Spec equivalence check before treating as interchangeable</li><li>Identify preferred/contractual suppliers</li><li>MOQ and lead time constraints per category</li><li>IT: software licence audit required</li><li>Confirm no deliberate fragmentation (resilience)</li></ul></div>
-        <div class="bl bl-ts"><div class="bl-title">Data needed</div><ul><li>Contract register (preferred supplier list)</li><li>Item specification data</li><li>IT licence audit output</li></ul></div>
-      </div>
-      <div class="hfooter"><span class="saving">£0.8M–£2.1M (8–15% on addressable spend)</span><span class="pill pgr">Heuristic — requires market testing</span></div>
-    </div>
-  </div>
-
-  <div class="heuristic">
-    <div class="hh" onclick="toggleH(this)">
-      <div class="hnum" style="background:var(--coral-l);color:var(--coral)">4</div>
-      <div class="htitle">Same supplier, different prices <span class="pill pdis" style="font-size:10px;margin-left:6px">OUTPUT DISABLED — data correction required</span></div>
-      <div class="hmeta"><span class="pill phi">Impact: High</span><span class="pill pmd">Effort: M</span><span class="pill pbl">30–90 days</span></div>
-      <span class="chev">▼</span>
-    </div>
-    <div class="hbody">
-      <div class="sanity-disabled">
-        <div class="sanity-title">⚠ Price variance output is DISABLED</div>
-        <div class="sanity-body">480 line items have unit prices below £0.01, affecting 51 suppliers. This is almost certainly caused by quantity-as-value data entry errors (e.g. "200" units entered as "200" in the value field). Presenting price variance figures from this data in client conversations would produce false conclusions and undermine credibility. This output will be re-enabled once the data correction workflow below is completed.</div>
-      </div>
-      <div class="trigger"><b>What will be detectable once fixed:</b> R&amp;M Europe BV — Nylon Cable Tie: 11 orders with apparent price variance. MEF Dublin — Rawlplugs: 7 orders. JOST LOGISTICS — Warehouse hire: 7 orders (likely duration mix). COPIADORAS — A4 print: 9 orders (possible per-page vs. contract line). These require data correction and specification validation before any supplier conversation.</div>
-      <div class="bg4">
-        <div class="bl bl-ev"><div class="bl-title">Evidence (pre-correction)</div><ul><li>480 rows with unit price &lt;£0.01 across 51 suppliers</li><li>Affected spend includes negative values (£−268K) — data artifact</li><li>Cannot distinguish genuine price variance from data error at this stage</li></ul></div>
-        <div class="bl bl-as"><div class="bl-title">Assumptions</div><ul><li>Extreme variances (&gt;1000%) assumed to be data entry errors</li><li>Moderate variances (10–200%) may be genuine — will surface post-correction</li><li>Hire items require normalisation to daily rate before comparison</li></ul></div>
-        <div class="bl bl-vl"><div class="bl-title">Remediation workflow</div><ul><li><b>Step 1:</b> Export all rows where unit price &lt;£0.01 to separate worksheet</li><li><b>Step 2:</b> AP team reviews each — confirm if qty or value field is incorrect</li><li><b>Step 3:</b> Correct source data, re-export clean file</li><li><b>Step 4:</b> Re-run this analysis against corrected file</li><li><b>Step 5:</b> Re-enable this heuristic — expected timeline: 1–2 weeks</li></ul></div>
-        <div class="bl bl-ts"><div class="bl-title">Data needed to unlock</div><ul><li>Corrected invoice file (post AP review)</li><li>Invoice copies for top 20 flagged items</li><li>Agreed unit prices / rate cards from contracts</li></ul></div>
-      </div>
-      <div class="hfooter"><span class="saving">£0.2M–£0.6M potential — unlocks post data correction</span><span class="pill pdis">DISABLED until data corrected</span></div>
-    </div>
-  </div>
-
-  <div class="heuristic">
-    <div class="hh" onclick="toggleH(this)">
-      <div class="hnum" style="background:var(--amber-l);color:var(--amber)">5</div>
-      <div class="htitle">Order consolidation &amp; batching</div>
-      <div class="hmeta"><span class="pill pmd">Impact: M</span><span class="pill plo">Effort: L</span><span class="pill pbl">0–30 days</span></div>
-      <span class="chev">▼</span>
-    </div>
-    <div class="hbody">
-      <div class="trigger"><b>Trigger:</b> 53.5% of invoices (5,385) are &lt;£500. IFS Courier: 992 lines at avg £27.85 — 144 days with multiple same-day deliveries, peak 50 in one day. Amazon: 638 sub-£500 lines at avg £49. Total AP processing cost at £25/invoice: est. £251,625/yr (0.43% of spend).</div>
-      <div class="bg4">
-        <div class="bl bl-ev"><div class="bl-title">Evidence</div><ul><li>5,385 invoices &lt;£500 — AP processing est. £135K</li><li>2,613 invoices &lt;£100 — marginal value, high cost</li><li>IFS Courier: 144 days with 2+ same-day deliveries</li><li>IFS Courier: peak 50 orders in one day</li><li>HWS Verhuur: 681 closely timed orders; LIFTISA: 652</li></ul></div>
-        <div class="bl bl-as"><div class="bl-title">Assumptions</div><ul><li>AP cost of £25/invoice is sector heuristic — actual varies</li><li>IFS orders assumed discretionary not urgent</li><li>Batching feasible without impacting project schedule</li><li>Amazon spend is MRO/office, not project-critical</li></ul></div>
-        <div class="bl bl-vl"><div class="bl-title">Validation required</div><ul><li>Confirm actual AP cost per invoice from Finance</li><li>Identify % of sub-£500 orders that are urgent</li><li>Determine whether IFS orders are site-driven or central</li><li>Amazon: P-card or corporate account operationally feasible?</li></ul></div>
-        <div class="bl bl-ts"><div class="bl-title">Data needed</div><ul><li>AP processing cost per invoice (Finance)</li><li>Order urgency classification (Ops)</li><li>Site-level order origination data</li></ul></div>
-      </div>
-      <div class="hfooter"><span class="saving">£60K–£120K/yr process cost + delivery discounts</span><span class="pill plo">Fastest implementable action</span></div>
-    </div>
-  </div>
-
-  <div class="heuristic">
-    <div class="hh" onclick="toggleH(this)">
-      <div class="hnum" style="background:var(--green-l);color:var(--green)">6</div>
-      <div class="htitle">Delivery &amp; logistics efficiency</div>
-      <div class="hmeta"><span class="pill pmd">Impact: M</span><span class="pill plo">Effort: L</span><span class="pill pbl">30–90 days</span></div>
-      <span class="chev">▼</span>
-    </div>
-    <div class="hbody">
-      <div class="trigger"><b>Trigger:</b> True logistics spend is £1.78M — not the £545K shown in Transport category. £519K is genuine embedded freight (see Logistics Audit tab). A further £735K was initially flagged but is actually milestone payment terms — these are false positives confirmed on audit. See Logistics Audit for full classification logic.</div>
-      <div class="bg4">
-        <div class="bl bl-ev"><div class="bl-title">Evidence</div><ul><li>Genuine embedded freight: £519K across 597 lines</li><li>Keyword split: transport £289K · delivery £205K · carriage £34K · freight £10K · shipping £4K</li><li>False positives identified: £735K in milestone payment terms containing the word "delivery"</li><li>Most common charge amounts are ad-hoc — no contracted rate visible</li></ul></div>
-        <div class="bl bl-as"><div class="bl-title">Assumptions</div><ul><li>Embedded charges assumed negotiable — may be bundled in equipment price</li><li>Large embedded charges (ABB, Elinex) assumed specialist freight</li><li>146 logistics suppliers assumed to have no master framework</li></ul></div>
-        <div class="bl bl-vl"><div class="bl-title">Validation required</div><ul><li>Confirm whether large embedded charges (ABB, Elinex) are inside equipment contracts</li><li>Check contract register for any existing carrier framework</li><li>Obtain actual carrier rate cards for comparison</li><li>Validate milestone payment flags are correctly excluded</li></ul></div>
-        <div class="bl bl-ts"><div class="bl-title">Data needed</div><ul><li>Contract register (to confirm bundling)</li><li>Carrier rate cards (3 preferred carriers)</li><li>Project delivery schedule (to assess consolidation feasibility)</li></ul></div>
-      </div>
-      <div class="hfooter"><span class="saving">£50K–£130K (10–25% on £519K genuine embedded freight)</span><span class="pill pgr">True figure revised after false-positive audit</span></div>
+    <div class="card"><div class="clbl">Monthly spend (£ gross)</div><div class="cw" style="height:200px"><canvas id="asMonthly"></canvas></div></div>
+    <div class="two-col">
+      <div class="card"><div class="clbl">Spend by category (auto-classified)</div><div class="cw" style="height:210px"><canvas id="asCat"></canvas></div></div>
+      <div class="card"><div class="clbl">VAT status split</div><div class="cw" style="height:210px"><canvas id="asVat"></canvas></div></div>
     </div>
   </div>
 </div>
 
-<!-- ======== LOGISTICS AUDIT ======== -->
-<div class="page" id="page-logistics">
-  <div class="ph"><div class="ph-title">Logistics spend — full audit trail</div><div class="ph-sub">This section is auditable. All classification logic, keyword rules, and false-positive flags are shown. The result is marked as an indicator requiring analyst validation before client presentation.</div></div>
-
-  <div class="card">
-    <div class="card-title">Classification logic — keyword rules applied</div>
-    <table><thead><tr><th>Keyword</th><th>Match type</th><th>Applied to field</th><th>Lines matched</th><th>Gross spend matched</th><th>False positives identified</th></tr></thead>
-    <tbody>
-      <tr><td>delivery</td><td>Contains (case-insensitive)</td><td>Description</td><td>232</td><td>£205,070</td><td>Milestone payment terms ("at delivery", "% at delivery")</td></tr>
-      <tr><td>carriage</td><td>Contains (case-insensitive)</td><td>Description</td><td>169</td><td>£33,672</td><td>None identified</td></tr>
-      <tr><td>freight</td><td>Contains (case-insensitive)</td><td>Description</td><td>49</td><td>£10,071</td><td>None identified</td></tr>
-      <tr><td>transport</td><td>Contains (case-insensitive)</td><td>Description</td><td>166</td><td>£288,551</td><td>"transport of equipment" in project service lines (review required)</td></tr>
-      <tr><td>shipping</td><td>Contains (case-insensitive)</td><td>Description</td><td>33</td><td>£4,057</td><td>None identified</td></tr>
-    </tbody></table>
+<!-- ─── VERIFICATION CHECKS ─── -->
+<div class="page" id="page-verification">
+  <div class="ph">
+    <div class="ph-title">Verification checks</div>
+    <div class="ph-sub">Six independent checks run against source data before any analysis output is generated. All must pass. Results are factual and unedited.</div>
   </div>
 
-  <div class="card" style="border-left:3px solid var(--amber);border-radius:0 var(--rl) var(--rl) 0">
-    <div class="card-title" style="color:var(--amber)">⚠ False positives identified — £734,982 excluded from genuine logistics</div>
-    <div style="font-size:13px;color:var(--text2);line-height:1.7">5 invoice lines totalling £734,982 initially matched logistics keywords but were found to be <b>milestone payment terms</b> not freight charges. For example: "10% at delivery 30d netto" (CTC Tankbouw, £143,500 × 2), "Milestone 3 - 30.09% after delivery on site" (Elinex, £245,204). The word "delivery" appears in a commercial payment condition, not a logistics charge. These are <b>excluded</b> from the logistics spend figure. An analyst must confirm this exclusion is correct before the figure is presented to any client.</div>
+  <div class="run-content run-kingsley">
+    <div class="card">
+      <div style="display:flex;flex-direction:column;gap:0">
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border)"><span style="color:var(--green);font-weight:700;font-size:14px;flex-shrink:0">✓</span><span style="flex:1;font-size:12px;color:var(--text2)">Total extended spend</span><span style="font-family:monospace;font-size:11px;font-weight:700">£24,839,398.89</span><span style="font-size:11px;color:var(--text3);font-style:italic;margin-left:8px">SUM(Extended Amount) · exact match</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border)"><span style="color:var(--green);font-weight:700;font-size:14px;flex-shrink:0">✓</span><span style="flex:1;font-size:12px;color:var(--text2)">Invoice line count</span><span style="font-family:monospace;font-size:11px;font-weight:700">307,820</span><span style="font-size:11px;color:var(--text3);font-style:italic;margin-left:8px">COUNTA(rows) · exact match</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border)"><span style="color:var(--green);font-weight:700;font-size:14px;flex-shrink:0">✓</span><span style="flex:1;font-size:12px;color:var(--text2)">Unique suppliers</span><span style="font-family:monospace;font-size:11px;font-weight:700">1,374</span><span style="font-size:11px;color:var(--text3);font-style:italic;margin-left:8px">DISTINCTCOUNT(Supplier) · exact match</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border)"><span style="color:var(--green);font-weight:700;font-size:14px;flex-shrink:0">✓</span><span style="flex:1;font-size:12px;color:var(--text2)">No-PO share (lines without PO reference)</span><span style="font-family:monospace;font-size:11px;font-weight:700">18.1%</span><span style="font-size:11px;color:var(--text3);font-style:italic;margin-left:8px">55,758 of 307,820 · exact match</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border)"><span style="color:var(--green);font-weight:700;font-size:14px;flex-shrink:0">✓</span><span style="flex:1;font-size:12px;color:var(--text2)">Unit cost coverage (rows where Unit Cost &gt; 0)</span><span style="font-family:monospace;font-size:11px;font-weight:700">94.4%</span><span style="font-size:11px;color:var(--text3);font-style:italic;margin-left:8px">290,734 of 307,820 · exact match</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 0"><span style="color:var(--green);font-weight:700;font-size:14px;flex-shrink:0">✓</span><span style="flex:1;font-size:12px;color:var(--text2)">Currency check (all rows)</span><span style="font-family:monospace;font-size:11px;font-weight:700">GBP: 307,819 / Other: 0</span><span style="font-size:11px;color:var(--text3);font-style:italic;margin-left:8px">Single currency confirmed</span></div>
+      </div>
+    </div>
   </div>
 
-  <div class="mg" style="margin-top:1rem">
-    <div class="metric"><div class="lbl">Keyword total (raw)</div><div class="val">£1,257K</div><div class="sub">Before false positive removal</div></div>
-    <div class="metric"><div class="lbl">Milestone false positives</div><div class="val">£735K</div><div class="warn">5 lines — payment terms not freight</div></div>
-    <div class="metric"><div class="lbl">Genuine embedded logistics</div><div class="val">£519K</div><div class="ok">597 lines — requires validation</div></div>
-    <div class="metric"><div class="lbl">Logistics category (separate)</div><div class="val">£545K</div><div class="sub">IFS Courier + direct logistics suppliers</div></div>
-    <div class="metric"><div class="lbl">True logistics total</div><div class="val">~£1.06M</div><div class="warn">Indicative — analyst validation required</div></div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">Top 25 embedded logistics invoice lines (genuine, post false-positive removal)</div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:.75rem;font-style:italic">Indicator status: requires analyst validation. Do not present gross figures to client without reviewing individual lines below. Some "transport" lines may be project service charges not freight.</div>
-    <div class="tbl-wrap">
-      <table><thead><tr><th>#</th><th>Supplier</th><th>Description (truncated)</th><th>Gross</th><th>Date</th><th>Keyword</th><th>Analyst note</th></tr></thead>
-      <tbody id="logisticsTable"></tbody></table>
+  <div class="run-content run-aidan" style="display:none">
+    <div class="card">
+      <div style="display:flex;flex-direction:column;gap:0">
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border)"><span style="color:var(--green);font-weight:700;font-size:14px;flex-shrink:0">✓</span><span style="flex:1;font-size:12px;color:var(--text2)">Total gross spend</span><span style="font-family:monospace;font-size:11px;font-weight:700">£59,189,035.91</span><span style="font-size:11px;color:var(--text3);font-style:italic;margin-left:8px">SUM(Sum of Gross) · exact match</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border)"><span style="color:var(--green);font-weight:700;font-size:14px;flex-shrink:0">✓</span><span style="flex:1;font-size:12px;color:var(--text2)">Invoice line count</span><span style="font-family:monospace;font-size:11px;font-weight:700">18,703</span><span style="font-size:11px;color:var(--text3);font-style:italic;margin-left:8px">COUNTA(rows) · exact match</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border)"><span style="color:var(--green);font-weight:700;font-size:14px;flex-shrink:0">✓</span><span style="flex:1;font-size:12px;color:var(--text2)">Unique suppliers</span><span style="font-family:monospace;font-size:11px;font-weight:700">732</span><span style="font-size:11px;color:var(--text3);font-style:italic;margin-left:8px">DISTINCTCOUNT(SupplierName) · exact match</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border)"><span style="color:var(--green);font-weight:700;font-size:14px;flex-shrink:0">✓</span><span style="flex:1;font-size:12px;color:var(--text2)">Zero-VAT share</span><span style="font-family:monospace;font-size:11px;font-weight:700">72.43%</span><span style="font-size:11px;color:var(--text3);font-style:italic;margin-left:8px">£42,872,679 ÷ £59,189,036 · exact match</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border)"><span style="color:var(--green);font-weight:700;font-size:14px;flex-shrink:0">✓</span><span style="flex:1;font-size:12px;color:var(--text2)">Top-10 supplier share</span><span style="font-family:monospace;font-size:11px;font-weight:700">25.64%</span><span style="font-size:11px;color:var(--text3);font-style:italic;margin-left:8px">Sum top 10 ÷ total · exact match</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 0"><span style="color:var(--green);font-weight:700;font-size:14px;flex-shrink:0">✓</span><span style="flex:1;font-size:12px;color:var(--text2)">Embedded logistics (keyword)</span><span style="font-family:monospace;font-size:11px;font-weight:700">£1,257,183.93</span><span style="font-size:11px;color:var(--text3);font-style:italic;margin-left:8px">delivery/carriage/freight/transport/shipping · exact match</span></div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- ======== DATA QUALITY ======== -->
-<div class="page" id="page-dataquality">
-  <div class="ph"><div class="ph-title">Data quality signals</div><div class="ph-sub">Data gaps are not errors to fix before analysis — they are signals about procurement maturity. Each gap tells a story.</div></div>
-
-  <div class="card">
-    <div class="card-title">Data sanity rules — applied before any analysis output</div>
-    <table><thead><tr><th>Rule</th><th>Condition</th><th>Action</th><th>Status</th></tr></thead>
-    <tbody>
-      <tr><td>Unit price floor</td><td>Unit price &lt; £0.01 (where qty &gt; 0)</td><td>Flag row; disable price variance heuristic (H4)</td><td><span class="pill pdis">480 rows flagged · H4 DISABLED</span></td></tr>
-      <tr><td>Unit price ceiling</td><td>Unit price &gt; £100,000</td><td>Flag for manual review; do not exclude</td><td><span class="pill pmd">83 rows flagged · manual review</span></td></tr>
-      <tr><td>Zero quantity</td><td>Sum of Quantity = 0</td><td>Exclude from unit price calculations; retain in spend totals</td><td><span class="pill pmd">48 rows · excluded from price calcs</span></td></tr>
-      <tr><td>Negative gross value</td><td>Sum of Gross &lt; 0</td><td>Flag as credit note; include in spend totals (net)</td><td><span class="pill pgr">Present in data — included in totals</span></td></tr>
-      <tr><td>Logistics keyword false positives</td><td>Keyword match + milestone payment pattern</td><td>Exclude from embedded logistics figure; flag for analyst review</td><td><span class="pill pmd">5 lines £735K excluded · see Logistics tab</span></td></tr>
-      <tr><td>Supplier name variants</td><td>Same supplier code, different name strings</td><td>Flag for master data cleanse; retain as-is in current analysis</td><td><span class="pill pmd">R&amp;M (4 variants), Craig (3 variants) flagged</span></td></tr>
-    </tbody></table>
+<!-- ─── SPEND CUBE ─── -->
+<div class="page" id="page-spend-cube">
+  <div class="ph">
+    <div class="ph-title">Spend cube</div>
+    <div class="ph-sub">Supplier × Category × Time × Site × Entity. Dimensions are populated from available data. Missing dimensions are declared below.</div>
   </div>
 
-  <div class="card" style="border-left:3px solid var(--coral);border-radius:0 var(--rl) var(--rl) 0;margin-top:.75rem">
-    <div class="card-title" style="color:var(--coral)">61.1% unclassified spend (£36.2M) — No category management framework</div>
-    <div style="font-size:13px;color:var(--text2);line-height:1.7">The absence of a category hierarchy in the P2P system is the most significant maturity indicator in this dataset. This is not a data quality problem — it reflects that no one has been held accountable for category-level spend ownership. Until resolved, supplier consolidation and benchmark analysis will remain partial. <b>Required: 4–6 week reclassification exercise, then manual review for top 80% of spend by value.</b></div>
-  </div>
-  <div class="card" style="border-left:3px solid var(--coral);border-radius:0 var(--rl) var(--rl) 0">
-    <div class="card-title" style="color:var(--coral)">480+ unit prices below £0.01 — Systemic AP input control failure</div>
-    <div style="font-size:13px;color:var(--text2);line-height:1.7">Most likely cause: quantity entered in the value field during manual invoice processing. This is why price variance (H4) has been disabled. <b>Remediation: (1) Export flagged rows. (2) AP team reviews each line against original invoice. (3) Correct source data. (4) Re-export clean file. (5) Re-run analysis. Estimated effort: 1–2 weeks.</b></div>
-  </div>
-  <div class="card" style="border-left:3px solid var(--amber);border-radius:0 var(--rl) var(--rl) 0">
-    <div class="card-title" style="color:var(--amber)">Supplier name variants — No master data governance</div>
-    <div style="font-size:13px;color:var(--text2);line-height:1.7">R&amp;M Europe: 4 name strings for the same legal entity. Robert Craig: 3 variants. This understates true supplier concentration and prevents accurate spend-by-supplier analysis. R&amp;M may be a £1M+ supplier once merged. <b>Required: Supplier master data cleanse and legal entity matching.</b></div>
-  </div>
-  <div class="card" style="border-left:3px solid var(--amber);border-radius:0 var(--rl) var(--rl) 0">
-    <div class="card-title" style="color:var(--amber)">No site/cost centre dimension — No BU-level spend accountability</div>
-    <div style="font-size:13px;color:var(--text2);line-height:1.7">Without a site or cost centre code, site-by-site heuristic (H1) cannot be completed. Maverick spend detection and budget compliance analysis are also blocked. <b>Required: Cost centre extract from ERP. Even a project code enables 70% of the missing analysis.</b></div>
-  </div>
-  <div class="card" style="border-left:3px solid var(--green);border-radius:0 var(--rl) var(--rl) 0">
-    <div class="card-title" style="color:var(--green)">72.4% zero-VAT (£42.9M) — Multi-jurisdiction compliance signal</div>
-    <div style="font-size:13px;color:var(--text2);line-height:1.7">Explainable in a multi-country operation (EU B2B zero-rating, reverse charge, construction exemptions) but warrants formal tax review. Both overclaiming and under-recovering input VAT are material risks. <b>Required: Tax/finance team confirmation by jurisdiction before any commercial conclusions.</b></div>
+  <div class="run-content run-kingsley">
+    <div class="card"><div class="clbl">Spend by category (£ extended)</div><div class="cw" style="height:380px"><canvas id="kCubeChart"></canvas></div></div>
+    <div class="card">
+      <div class="card-title">Available dimensions — this run</div>
+      <table><thead><tr><th>Dimension</th><th>Status</th><th>Source field</th><th>Coverage</th></tr></thead>
+      <tbody>
+        <tr><td>Supplier</td><td><span class="pill plo">Present</span></td><td>Supplier</td><td>307,820 / 307,820</td></tr>
+        <tr><td>Time</td><td><span class="pill plo">Present</span></td><td>Invoice Accounting Date</td><td>307,820 / 307,820</td></tr>
+        <tr><td>Category</td><td><span class="pill plo">Present — ERP</span></td><td>Spend Category as Worktag</td><td>217 categories</td></tr>
+        <tr><td>Site / location</td><td><span class="pill plo">Present</span></td><td>Home/Branch</td><td>51 sites</td></tr>
+        <tr><td>Entity / company</td><td><span class="pill plo">Present</span></td><td>Company</td><td>47 entities</td></tr>
+        <tr><td>Unit cost</td><td><span class="pill pmd">Partial</span></td><td>Unit Cost</td><td>94.4% — 17,086 zero rows</td></tr>
+        <tr><td>PO reference</td><td><span class="pill pmd">Partial</span></td><td>Purchase Orders</td><td>82% — 55,758 no-PO</td></tr>
+        <tr><td>Currency</td><td><span class="pill plo">Single — GBP</span></td><td>Currency</td><td>307,819 / 307,820</td></tr>
+      </tbody></table>
+    </div>
   </div>
 
-  <div class="card" style="margin-top:.75rem">
-    <div class="card-title">Data that would materially improve confidence</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:7px;font-size:12px;color:var(--text2)">
-      <div>• FY2023 spend data (year-on-year baseline)</div>
-      <div>• Site / cost centre / project code per line</div>
-      <div>• Contract reference per supplier</div>
-      <div>• Agreed unit prices / rate cards</div>
-      <div>• PO vs. non-PO flag per invoice</div>
-      <div>• Corrected unit prices (post AP review)</div>
-      <div>• FX normalisation table (EUR/GBP/USD)</div>
-      <div>• Supplier legal entity master</div>
+  <div class="run-content run-aidan" style="display:none">
+    <div class="card"><div class="clbl">Spend by category — auto-classified (£ gross)</div><div class="cw" style="height:380px"><canvas id="asCubeChart"></canvas></div></div>
+    <div class="card">
+      <div class="card-title">Available dimensions — this run</div>
+      <table><thead><tr><th>Dimension</th><th>Status</th><th>Source field</th><th>Coverage</th></tr></thead>
+      <tbody>
+        <tr><td>Supplier</td><td><span class="pill plo">Present</span></td><td>SupplierName</td><td>18,703 / 18,703</td></tr>
+        <tr><td>Time</td><td><span class="pill plo">Present</span></td><td>DateCreated</td><td>18,703 / 18,703</td></tr>
+        <tr><td>Category</td><td><span class="pill phi">Auto-classified</span></td><td>Description (keyword)</td><td>38.9% classified</td></tr>
+        <tr><td>Site / location</td><td><span class="pill pdis">Absent — H1 blocked</span></td><td>—</td><td>0%</td></tr>
+        <tr><td>Entity / company</td><td><span class="pill pdis">Absent</span></td><td>—</td><td>0%</td></tr>
+        <tr><td>Unit cost</td><td><span class="pill pdis">Corrupted — H4 disabled</span></td><td>Sum of Net ÷ Sum of Quantity</td><td>480 rows &lt;£0.01</td></tr>
+        <tr><td>PO reference</td><td><span class="pill pmd">Partial</span></td><td>SupplierReference (inferred)</td><td>Unclear from source</td></tr>
+        <tr><td>Currency</td><td><span class="pill phi">Multi — unnormalised</span></td><td>Inferred from supplier</td><td>GBP / EUR / USD mixed</td></tr>
+      </tbody></table>
     </div>
   </div>
 </div>
 
-<!-- ======== ACTION PLAN ======== -->
-<div class="page" id="page-actionplan">
-  <div class="ph"><div class="ph-title">Structured action plan</div><div class="ph-sub">Each opportunity mapped to owner, horizon, effort, impact, and data validation required. Sequenced for maximum early credibility.</div></div>
-  <div class="card">
-    <div class="tbl-wrap">
-      <table class="ap-table">
-        <thead><tr><th>#</th><th>Action / opportunity</th><th>Owner</th><th>Horizon</th><th>Effort</th><th>Impact</th><th>Saving estimate</th><th>Data needed to validate</th></tr></thead>
+<!-- ─── H1: SITE CUBE ─── -->
+<div class="page" id="page-h1">
+  <div class="ph"><div class="ph-title">H1 — Site-by-site spend behaviour</div><div class="ph-sub">Compares spend, pricing, and supplier usage by site. Flags inconsistent buying behaviour or pricing variance across locations.</div></div>
+
+  <!-- CONFIDENCE BLOCK — engine output, neutral -->
+  <div class="run-content run-kingsley">
+    <div class="conf-block">
+      <div class="conf-row">
+        <span class="conf-label">H1 status</span>
+        <span class="pill plo">Active</span>
+        <span style="font-size:11px;color:var(--text2);margin-left:4px">Site dimension present: 51 sites from Home/Branch field</span>
+      </div>
+      <div class="conf-row">
+        <span class="conf-label">Confidence</span>
+        <div class="conf-bar-wrap"><div class="conf-bar" style="width:68%;background:var(--green)"></div></div>
+        <span class="conf-pct">68%</span>
+      </div>
+      <div class="conf-row" style="margin-bottom:0">
+        <span class="conf-label">Limiting factor</span>
+        <span style="font-size:11px;color:var(--text2)">No contract register — pricing differences between sites cannot be distinguished from contracted rate differences. No FX adjustment required (single currency).</span>
+      </div>
+    </div>
+    <div class="card"><div class="clbl">Spend by site — top 20</div><div class="cw" style="height:500px"><canvas id="kSites"></canvas></div></div>
+    <div class="card">
+      <div class="card-title">H1 findings — engine output</div>
+      <div class="trigger"><b>Trigger:</b> 51 sites present. Construction spend concentrated at 3 sites (EVE, QC, OLN = £6.4M of £7.3M construction total). Agency staff spend concentrated at 2 sites: KIN £170K and HER £168K = 24% of group agency total.</div>
+      <div class="bg4">
+        <div class="bl bl-ev"><div class="bl-title">Evidence</div><ul><li>CEN Kingsley House: £4.7M — central entity, leasehold dominated</li><li>QC Queen Charlotte: £3.7M — £3.4M construction activity</li><li>EVE Eversley Lodge: £3.0M — £2.7M construction activity</li><li>KIN King's Court: highest agency spend (£170K) of any operational site</li><li>BUC Buckingham Lodge: electricity £116K — high vs. comparable sites</li></ul></div>
+        <div class="bl bl-as"><div class="bl-title">Assumptions</div><ul><li>Sites with high construction spend are in active development phase — not normal operating cost</li><li>Agency staff spend assumed to reflect staffing need, not rate difference — unconfirmed</li><li>Electricity comparison assumes similar site size and bed count — not validated</li></ul></div>
+        <div class="bl bl-vl"><div class="bl-title">Validation required</div><ul><li>Confirm construction sites are active projects, not cost anomalies</li><li>Validate KIN and HER agency spend against bed occupancy and headcount</li><li>Compare BUC electricity vs. sites of similar size before escalating</li><li>Obtain site-level contract terms to separate pricing from behaviour</li></ul></div>
+        <div class="bl bl-ts"><div class="bl-title">Data to unlock full output</div><ul><li>Site-level contract rates (electricity, food, care supplies)</li><li>Bed occupancy per site</li><li>Permanent headcount per site</li><li>Construction project schedule</li></ul></div>
+      </div>
+      <div class="hfooter"><span class="saving">Potential: £0.3M–£1.2M — requires contract data first</span><span class="pill pgr">Indicative — heuristic assumption</span></div>
+    </div>
+    <div class="analyst-note">
+      <div class="analyst-note-label">Analyst note</div>
+      <div class="analyst-note-body">King's Court (KIN) shows the highest agency staff spend and has active construction activity — these two factors may be causally linked. If site disruption is driving temporary staffing, the commercial lever is project scheduling, not supplier negotiation. Do not present this as a procurement saving without confirming the root cause with operations. Similarly, the Buckingham Lodge electricity figure should be checked against meter readings and tariff type before being cited to a client — high energy use in a care home setting may reflect clinical equipment requirements, not inefficiency.</div>
+    </div>
+  </div>
+
+  <div class="run-content run-aidan" style="display:none">
+    <div class="conf-block">
+      <div class="conf-row">
+        <span class="conf-label">H1 status</span>
+        <span class="pill pdis">Blocked</span>
+        <span style="font-size:11px;color:var(--red);margin-left:4px">Site dimension absent: no site/location field in source data</span>
+      </div>
+      <div class="conf-row" style="margin-bottom:0">
+        <span class="conf-label">To unlock</span>
+        <span style="font-size:11px;color:var(--text2)">Request cost centre / site code extract from ERP. Invoice reference field present — join key is available once site data is supplied.</span>
+      </div>
+    </div>
+    <div class="disabled-output">
+      <div class="do-title">H1 output not generated — site dimension absent</div>
+      <div class="do-body">The engine requires a site or location field to run H1. This field is not present in the active dataset. Supplier name and description fields contain geographic signals (entity type suffix: Ltd/BV/GmbH/SL) but these are not reliable site proxies and will not be used as substitutes. Site analysis will be generated when a valid site field is provided.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── H2: YOY TREND ─── -->
+<div class="page" id="page-h2">
+  <div class="ph"><div class="ph-title">H2 — Year-on-year spend trend</div><div class="ph-sub">Identifies spend growth not aligned to volume or known inflation drivers. Separates observable trends from assumed causes.</div></div>
+
+  <div class="conf-block">
+    <div class="conf-row">
+      <span class="conf-label">H2 status</span>
+      <span class="pill pmd">Partial</span>
+      <span style="font-size:11px;color:var(--text2);margin-left:4px">Single year available — trend direction cannot be confirmed without prior-year data</span>
+    </div>
+    <div class="conf-row" style="margin-bottom:0">
+      <span class="conf-label">Confidence</span>
+      <div class="conf-bar-wrap"><div class="conf-bar" style="width:30%;background:var(--amber)"></div></div>
+      <span class="conf-pct">30%</span>
+      <span style="font-size:11px;color:var(--text3);margin-left:8px">Applies to both runs. Unlocked by prior-year extract in same format.</span>
+    </div>
+  </div>
+
+  <div class="run-content run-kingsley">
+    <div class="trigger"><b>Trigger signal:</b> Monthly spend range £1,087 (Sep-24) to £5,022,220 (Sep-25). Spend in FY2025 H1 (Jan–Jun) = £13.1M vs FY2025 H2 (Jul–Dec, partial) = £2.9M captured to date. Sep-25 is the single highest-spend month at £5.0M.</div>
+    <div class="bg4">
+      <div class="bl bl-ev"><div class="bl-title">Evidence</div><ul><li>Dataset spans Sep-24 to Dec-25 (16 months, partial year-end)</li><li>Jan-25 spike: £3.8M — highest full month in dataset</li><li>Sep-25 spike: £5.0M — highest single month overall</li><li>Mar-25 notably low: £260K — likely data completeness, not activity drop</li></ul></div>
+      <div class="bl bl-as"><div class="bl-title">Assumptions</div><ul><li>Monthly spikes assumed to be construction milestones or lease payments — not confirmed</li><li>Low months assumed to be incomplete data capture — not confirmed</li><li>No seasonality model available without prior year</li></ul></div>
+      <div class="bl bl-vl"><div class="bl-title">Validation required</div><ul><li>Cross-reference monthly profile against construction milestone schedule</li><li>Confirm low-spend months are complete (no pending invoices)</li><li>Obtain FY2023/24 data in same format to establish trend direction</li></ul></div>
+      <div class="bl bl-ts"><div class="bl-title">Data to unlock full output</div><ul><li>Prior-year spend extract (FY2023/24) — same format</li><li>Construction milestone schedule</li><li>Invoice submission lag profile</li></ul></div>
+    </div>
+    <div class="hfooter"><span class="saving">Diagnostic only — prize undefined without prior-year baseline</span><span class="pill pgr">Low confidence — single year</span></div>
+  </div>
+
+  <div class="run-content run-aidan" style="display:none">
+    <div class="trigger"><b>Trigger signal:</b> H2 spend (£26.3M) is 20% below H1 (£32.9M). Q4 is 25.9% below Q1. Week 29 (mid-July) is peak at £1.9M. Sharp decline from August onward.</div>
+    <div class="bg4">
+      <div class="bl bl-ev"><div class="bl-title">Evidence</div><ul><li>Q1: £17.1M → Q4: £12.7M — £4.4M within-year decline</li><li>July spike then sustained lower spend Aug–Dec</li><li>Delivery charge volumes do not decline proportionally to spend</li></ul></div>
+      <div class="bl bl-as"><div class="bl-title">Assumptions</div><ul><li>Decline assumed to reflect project phasing — not validated</li><li>H1 weighting assumed normal — may reflect project ramp-up</li></ul></div>
+      <div class="bl bl-vl"><div class="bl-title">Validation required</div><ul><li>Cross-reference against project delivery schedule</li><li>Confirm H2 decline is genuine, not off-system or accrued spend</li><li>Obtain FY2023 to establish trend direction</li></ul></div>
+      <div class="bl bl-ts"><div class="bl-title">Data to unlock</div><ul><li>FY2023 spend extract · project schedule · budget actuals</li></ul></div>
+    </div>
+    <div class="hfooter"><span class="saving">Diagnostic only — trend direction unconfirmed</span><span class="pill pgr">Low confidence — no prior year</span></div>
+  </div>
+</div>
+
+<!-- ─── H3: CONSOLIDATION ─── -->
+<div class="page" id="page-h3">
+  <div class="ph"><div class="ph-title">H3 — Supplier consolidation</div><div class="ph-sub">Identifies similar products purchased from multiple suppliers. Flags fragmentation and lost volume leverage.</div></div>
+
+  <div class="run-content run-kingsley">
+    <div class="conf-block">
+      <div class="conf-row"><span class="conf-label">H3 status</span><span class="pill plo">Active</span><span style="font-size:11px;color:var(--text2);margin-left:4px">ERP category dimension present — consolidation targeting by category is reliable</span></div>
+      <div class="conf-row" style="margin-bottom:0"><span class="conf-label">Confidence</span><div class="conf-bar-wrap"><div class="conf-bar" style="width:72%;background:var(--green)"></div></div><span class="conf-pct">72%</span></div>
+    </div>
+    <div class="trigger"><b>Trigger signal:</b> Food: 46 suppliers for £2.87M (Brakes Bros £1.28M dominant, 45 others = £1.59M). Care supplies: Andway Healthcare the largest but others present. Cleaning supplies: Bunzl £382K with fragmentation below. Agency staff: multiple agencies across 15+ sites.</div>
+    <div class="bg4">
+      <div class="bl bl-ev"><div class="bl-title">Evidence</div><ul><li>Food: 46 suppliers — Brakes Bros (44%) + 45 others</li><li>Care supplies: Andway £634K but multiple competing suppliers on same items</li><li>Cleaning: Bunzl £382K — unclear whether others are approved alternatives</li><li>Agency: 5+ agencies active simultaneously across sites</li></ul></div>
+      <div class="bl bl-as"><div class="bl-title">Assumptions</div><ul><li>Fragmentation assumed to indicate consolidation opportunity — may reflect deliberate resilience policy</li><li>Lower-spend food suppliers assumed to be local/specialist — not confirmed as interchangeable with Brakes Bros</li></ul></div>
+      <div class="bl bl-vl"><div class="bl-title">Validation required</div><ul><li>Confirm whether multi-supplier policy is deliberate (e.g. local sourcing requirement)</li><li>Identify which categories have preferred supplier agreements</li><li>Validate spec equivalence for care supplies before consolidation</li></ul></div>
+      <div class="bl bl-ts"><div class="bl-title">Data to unlock</div><ul><li>Preferred supplier list (PSL) · contract register · item specification data</li></ul></div>
+    </div>
+    <div class="hfooter"><span class="saving">£80K–£250K (food + care supplies consolidation)</span><span class="pill pgr">Heuristic — requires market testing</span></div>
+    <div class="analyst-note">
+      <div class="analyst-note-label">Analyst note</div>
+      <div class="analyst-note-body">Food supply in care homes carries quality, allergen, and regulatory obligations that are different from standard procurement. Brakes Bros and Bidfood are both national foodservice distributors — consolidation to one is theoretically feasible, but the risk profile is higher than in other categories. Local produce suppliers (Northwest Produce, Arnolds Produce) may be retained by site preference or CQC inspection commentary. Raise this with the clinical/care team before framing as a consolidation opportunity.</div>
+    </div>
+  </div>
+
+  <div class="run-content run-aidan" style="display:none">
+    <div class="conf-block">
+      <div class="conf-row"><span class="conf-label">H3 status</span><span class="pill pmd">Partial</span><span style="font-size:11px;color:var(--text2);margin-left:4px">Category auto-classified — 61.1% of spend unclassified; consolidation analysis covers 38.9% of base only</span></div>
+      <div class="conf-row" style="margin-bottom:0"><span class="conf-label">Confidence</span><div class="conf-bar-wrap"><div class="conf-bar" style="width:38%;background:var(--amber)"></div></div><span class="conf-pct">38%</span></div>
+    </div>
+    <div class="trigger"><b>Trigger signal:</b> Cable ties from 15 suppliers. Transport: 146 suppliers for £545K avg £3.7K. IT &amp; Software: 312 suppliers for £9.1M. Top-10 supplier share = 25.6% of total spend.</div>
+    <div class="bg4">
+      <div class="bl bl-ev"><div class="bl-title">Evidence</div><ul><li>15 suppliers for cable ties — single commodity item</li><li>IFS Courier: 992 lines at avg £27.85 each</li><li>IT &amp; Software: 312 suppliers, avg £29K spend each</li><li>180 one-off suppliers (24.6% of supplier base)</li></ul></div>
+      <div class="bl bl-as"><div class="bl-title">Assumptions</div><ul><li>Similar descriptions assumed equivalent specifications — analyst must verify</li><li>Volume leverage assumed available — contract terms not visible</li></ul></div>
+      <div class="bl bl-vl"><div class="bl-title">Validation required</div><ul><li>Spec equivalence check before treating items as interchangeable</li><li>Identify preferred/contractual suppliers in each category</li><li>IT: software licence audit required</li></ul></div>
+      <div class="bl bl-ts"><div class="bl-title">Data to unlock</div><ul><li>Contract register · item spec data · IT licence audit output</li></ul></div>
+    </div>
+    <div class="hfooter"><span class="saving">£0.8M–£2.1M (8–15% on addressable spend)</span><span class="pill pgr">Heuristic — requires market testing</span></div>
+  </div>
+</div>
+
+<!-- ─── H4: PRICE VARIANCE ─── -->
+<div class="page" id="page-h4">
+  <div class="ph"><div class="ph-title">H4 — Same supplier, different prices</div><div class="ph-sub">Detects identical or equivalent items charged at different prices. Requires human validation of specification equivalence.</div></div>
+
+  <!-- Kingsley: H4 active (with caveats) -->
+  <div class="run-content run-kingsley">
+    <div class="conf-block">
+      <div class="conf-row"><span class="conf-label">H4 status</span><span class="pill pmd">Active — caveats apply</span><span style="font-size:11px;color:var(--text2);margin-left:4px">Unit cost data 94% populated; no systemic entry errors detected; utility variances excluded (charge-type mixing, not price variance)</span></div>
+      <div class="conf-row" style="margin-bottom:0"><span class="conf-label">Confidence</span><div class="conf-bar-wrap"><div class="conf-bar" style="width:58%;background:var(--amber)"></div></div><span class="conf-pct">58%</span><span style="font-size:11px;color:var(--text3);margin-left:8px">No rate card present — cannot determine contract vs. invoice price</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Data sanity check — applied before H4 output</div>
+      <table><thead><tr><th>Rule</th><th>Condition</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Unit price floor</td><td>Unit cost &lt; £0.01 (where qty &gt; 0)</td><td><span class="pill plo">0 systemic cases — no disable required</span></td></tr>
+        <tr><td>Utility variance exclusion</td><td>Variance &gt;1000% on utility suppliers (Npower, Wave, SEFE, Calor Gas)</td><td><span class="pill pmd">Excluded — charge-type mixing, not price variance</span></td></tr>
+        <tr><td>Bulk order anomaly</td><td>Unit cost &lt; £0.50 where qty &gt;100</td><td><span class="pill pmd">1 case identified — Supreme wipes, Buckingham Lodge</span></td></tr>
+        <tr><td>Hire normalisation</td><td>Item descriptions containing "rental/hire/lease" with duration variance</td><td><span class="pill pmd">Rate normalisation required before comparison</span></td></tr>
+      </tbody></table>
+    </div>
+
+    <div class="pv-item" style="border-color:var(--coral-m);background:var(--coral-l)">
+      <div class="pv-header"><div class="pv-title" style="color:var(--coral)">Supreme Skin Cleansing Wipes 20x20cm (Pack 100) — Andway Healthcare</div><span class="pill phi">Genuine range £2.18–£23.52 · 74 orders</span></div>
+      <div class="pv-body">Excluding one probable bulk-entry anomaly (Buckingham Lodge, £0.24 for 208 packs), prices range from £2.18 to £23.52 across 12+ sites. The £17.45 price point is the most common (majority of orders). £18.95 and £23.52 appear at specific sites. The £2.18 value appears at limited sites and may reflect a different pack configuration.</div>
+      <div class="fact">Evidence: 74 usable orders · Assumption: same item description = same specification — analyst must validate · Validation: product spec sheet from Andway + contract rate card</div>
+    </div>
+
+    <div class="pv-item" style="border-color:var(--amber-m);background:var(--amber-l)">
+      <div class="pv-header"><div class="pv-title" style="color:var(--amber)">Food Probe Wipes (200) — Andway Healthcare</div><span class="pill pmd">268% variance · 19 orders</span></div>
+      <div class="pv-body">Price range: £1.95 to £7.18 per pack of 200. 19 orders across multiple sites. Variance may reflect a contract price change, rebate structure, or specification difference. This is a genuine commercial question.</div>
+      <div class="fact">Evidence: 19 clean orders · Validation: Andway rate card and invoice date correlation</div>
+    </div>
+
+    <div class="pv-item" style="border-color:var(--amber-m);background:var(--amber-l)">
+      <div class="pv-header"><div class="pv-title" style="color:var(--amber)">Nilaqua Hand &amp; Face Wipes (200) — Andway Healthcare</div><span class="pill pmd">123% variance · 20 orders</span></div>
+      <div class="pv-body">£1.95 to £4.35 per pack across 20 orders. Given single supplier, this reflects either price tiers by volume/site, price inflation over period, or catalogue price vs. contracted rate discrepancy.</div>
+      <div class="fact">Evidence: 20 clean orders · Validation: Andway rate card; confirm whether site-specific pricing applies</div>
+    </div>
+
+    <div class="analyst-note">
+      <div class="analyst-note-label">Analyst note</div>
+      <div class="analyst-note-body">The wipes dataset is a clean price variance example — a single supplier, a finite product list, and 191 transactions across known sites. Before any supplier conversation: validate the product specifications (Andway may have multiple SKUs with similar names), obtain the current contract rate card, and check whether the lower prices represent a legacy rate that has since increased. If the £17.45 rate is the current contracted price, the lower historic prices are not leverage — they are history.</div>
+    </div>
+
+    <div class="hfooter"><span class="saving">£20K–£60K potential (wipes category) — requires rate card first</span></div>
+  </div>
+
+  <!-- Aidan Strain: H4 disabled -->
+  <div class="run-content run-aidan" style="display:none">
+    <div class="conf-block">
+      <div class="conf-row"><span class="conf-label">H4 status</span><span class="pill pdis">Disabled</span><span style="font-size:11px;color:var(--red);margin-left:4px">480 unit price anomalies detected (&lt;£0.01). Output suppressed to prevent false findings.</span></div>
+    </div>
+    <div class="disabled-output">
+      <div class="do-title">H4 output disabled — unit price anomalies exceed threshold</div>
+      <div class="do-body">480 line items carry unit prices below £0.01. This is a systemic signal consistent with quantity-as-value data entry errors (e.g. "200" units entered in the value field). Presenting price variance figures derived from this data would produce false findings. This output will be re-enabled once the remediation workflow below is completed.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Remediation workflow — required before H4 re-runs</div>
+      <table><thead><tr><th>Step</th><th>Action</th><th>Owner</th><th>Estimated effort</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Export all rows where unit price &lt; £0.01 to separate worksheet</td><td>Analyst</td><td>1 hour</td></tr>
+        <tr><td>2</td><td>AP team reviews each flagged row against original invoice — confirm whether quantity or value field is incorrect</td><td>AP team</td><td>3–5 days</td></tr>
+        <tr><td>3</td><td>Correct source data, re-export clean file</td><td>AP team</td><td>1 day</td></tr>
+        <tr><td>4</td><td>Re-run engine against corrected file — H4 will activate automatically if sanity check passes</td><td>Analyst</td><td>1 hour</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ─── H5: ORDER BATCHING ─── -->
+<div class="page" id="page-h5">
+  <div class="ph"><div class="ph-title">H5 — Order consolidation &amp; batching</div><div class="ph-sub">Identifies repeated low-value or closely timed orders. Flags transactional inefficiency and batching opportunities.</div></div>
+
+  <div class="conf-block">
+    <div class="conf-row"><span class="conf-label">H5 status</span><span class="pill plo">Active — both runs</span><span style="font-size:11px;color:var(--text2);margin-left:4px">H5 requires only supplier, date, and amount. No additional dimensions needed.</span></div>
+    <div class="conf-row" style="margin-bottom:0"><span class="conf-label">Confidence</span><div class="conf-bar-wrap"><div class="conf-bar" style="width:82%;background:var(--green)"></div></div><span class="conf-pct">82%</span><span style="font-size:11px;color:var(--text3);margin-left:8px">Applies to both runs. AP cost assumption is heuristic — validate with Finance.</span></div>
+  </div>
+
+  <div class="run-content run-kingsley">
+    <div class="trigger"><b>Trigger signal — Kingsley run:</b> 18.1% of lines (55,758) have no PO reference. Sub-£500 invoices represent significant volume. Multiple suppliers show daily order patterns across sites.</div>
+    <div class="bg4">
+      <div class="bl bl-ev"><div class="bl-title">Evidence</div><ul><li>55,758 no-PO invoice lines (18.1%)</li><li>Agency staff invoices: multiple agencies, frequent small invoices</li><li>Food: 307,820 total lines — high-frequency ordering pattern visible</li><li>Cleaning / hygiene: Bunzl 381K spend across high line count</li></ul></div>
+      <div class="bl bl-as"><div class="bl-title">Assumptions</div><ul><li>AP cost of £25/invoice is a sector heuristic — actual varies</li><li>No-PO spend assumed partially plannable — may include reactive/urgent items</li></ul></div>
+      <div class="bl bl-vl"><div class="bl-title">Validation required</div><ul><li>Confirm actual AP cost per invoice from Finance</li><li>Identify % of sub-threshold orders that are urgent vs. plannable</li><li>Determine whether food and care supply ordering is site-driven or central</li></ul></div>
+      <div class="bl bl-ts"><div class="bl-title">Data to unlock</div><ul><li>AP cost per invoice (Finance) · order urgency classification (Ops)</li></ul></div>
+    </div>
+    <div class="hfooter"><span class="saving">Process cost saving: £40K–£100K/yr — dependent on AP cost confirmation</span></div>
+  </div>
+
+  <div class="run-content run-aidan" style="display:none">
+    <div class="trigger"><b>Trigger signal — Aidan Strain run:</b> 53.5% of invoices (5,385) are &lt;£500. IFS Courier: 992 delivery lines at avg £27.85. 144 days with multiple same-day deliveries from IFS, peak 50 orders in one day.</div>
+    <div class="bg4">
+      <div class="bl bl-ev"><div class="bl-title">Evidence</div><ul><li>5,385 invoices &lt;£500 — AP cost est. £135K at £25/invoice</li><li>2,613 invoices &lt;£100</li><li>IFS Courier: 144 days with 2+ same-day deliveries</li><li>Amazon: 638 sub-£500 lines at avg £49 each</li></ul></div>
+      <div class="bl bl-as"><div class="bl-title">Assumptions</div><ul><li>AP cost of £25/invoice is heuristic — actual may vary</li><li>IFS orders assumed discretionary not urgent</li><li>Amazon assumed MRO/office, not project-critical</li></ul></div>
+      <div class="bl bl-vl"><div class="bl-title">Validation required</div><ul><li>Confirm actual AP cost per invoice from Finance</li><li>Identify % of sub-£500 orders that are urgent/reactive</li><li>Determine whether IFS orders are site-driven or central</li></ul></div>
+      <div class="bl bl-ts"><div class="bl-title">Data to unlock</div><ul><li>AP processing cost · order urgency data · site origination</li></ul></div>
+    </div>
+    <div class="hfooter"><span class="saving">£60K–£120K/yr process cost + delivery consolidation</span><span class="pill plo">Lowest effort — fastest implementable action</span></div>
+  </div>
+</div>
+
+<!-- ─── H6: LOGISTICS ─── -->
+<div class="page" id="page-h6">
+  <div class="ph"><div class="ph-title">H6 — Delivery &amp; logistics efficiency</div><div class="ph-sub">Identifies fragmented delivery patterns or repeated urgent deliveries. Flags logistics and planning inefficiencies. Includes embedded logistics audit.</div></div>
+
+  <div class="run-content run-kingsley">
+    <div class="conf-block">
+      <div class="conf-row"><span class="conf-label">H6 status</span><span class="pill plo">Active</span><span style="font-size:11px;color:var(--text2);margin-left:4px">Transport category present in ERP (£531K). No embedded logistics keyword audit has been run on this dataset.</span></div>
+      <div class="conf-row" style="margin-bottom:0"><span class="conf-label">Confidence</span><div class="conf-bar-wrap"><div class="conf-bar" style="width:55%;background:var(--amber)"></div></div><span class="conf-pct">55%</span><span style="font-size:11px;color:var(--text3);margin-left:8px">Transport category captures direct logistics. Embedded freight (in construction/equipment invoices) not yet quantified.</span></div>
+    </div>
+    <div class="trigger"><b>Trigger signal:</b> Transport category: £531K. Construction invoices (£7.3M) likely contain embedded freight charges — not yet separated. Care supplies and food deliveries distributed across 51 sites with no evidence of consolidated delivery schedule.</div>
+    <div class="bg4">
+      <div class="bl bl-ev"><div class="bl-title">Evidence</div><ul><li>Transport category: £531K across multiple suppliers</li><li>C E Aviation UK Ltd: £447K — specialist aviation, different lever</li><li>No carrier framework visible in supplier list</li><li>Food deliveries: Brakes Bros + 45 others likely delivering independently to 51 sites</li></ul></div>
+      <div class="bl bl-as"><div class="bl-title">Assumptions</div><ul><li>Construction-embedded freight assumed material — not yet quantified</li><li>Food supplier deliveries assumed to be direct-to-site — not confirmed</li><li>C E Aviation assumed to be non-negotiable specialist cost</li></ul></div>
+      <div class="bl bl-vl"><div class="bl-title">Validation required</div><ul><li>Run embedded logistics keyword audit on full dataset</li><li>Confirm C E Aviation scope and contract status</li><li>Determine whether food suppliers offer consolidated delivery options</li></ul></div>
+      <div class="bl bl-ts"><div class="bl-title">Data to unlock</div><ul><li>Contract register · carrier rate cards · delivery schedule by site</li></ul></div>
+    </div>
+    <div class="hfooter"><span class="saving">£30K–£80K — subject to embedded logistics quantification</span></div>
+  </div>
+
+  <div class="run-content run-aidan" style="display:none">
+    <div class="conf-block">
+      <div class="conf-row"><span class="conf-label">H6 status</span><span class="pill plo">Active — audit complete</span><span style="font-size:11px;color:var(--text2);margin-left:4px">Keyword audit run. False positives identified and excluded. Genuine embedded logistics: £519K / 597 lines.</span></div>
+      <div class="conf-row" style="margin-bottom:0"><span class="conf-label">Confidence</span><div class="conf-bar-wrap"><div class="conf-bar" style="width:68%;background:var(--green)"></div></div><span class="conf-pct">68%</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Embedded logistics — classification audit summary</div>
+      <table><thead><tr><th>Keyword</th><th>Lines matched</th><th>Gross (raw)</th><th>False positives</th><th>Net genuine</th></tr></thead>
+      <tbody>
+        <tr><td>delivery</td><td>232</td><td>£205,070</td><td>5 lines (£734,982 milestone payment terms)</td><td>£205,070 excl. FP</td></tr>
+        <tr><td>transport</td><td>166</td><td>£288,551</td><td>Review required — some project service lines</td><td>£288,551 (indicative)</td></tr>
+        <tr><td>carriage</td><td>169</td><td>£33,672</td><td>None identified</td><td>£33,672</td></tr>
+        <tr><td>freight</td><td>49</td><td>£10,071</td><td>None identified</td><td>£10,071</td></tr>
+        <tr><td>shipping</td><td>33</td><td>£4,057</td><td>None identified</td><td>£4,057</td></tr>
+      </tbody></table>
+    </div>
+    <div class="trigger"><b>Key finding:</b> £734,982 initially flagged as logistics was actually milestone payment terms containing the word "delivery" (e.g. "10% at delivery 30d netto", "Milestone 3 — 30.09% after delivery on site"). These are contract payment conditions, not freight charges. Excluded from genuine logistics figure. Analyst must confirm exclusion is correct before presenting to client.</div>
+    <div class="hfooter"><span class="saving">£50K–£130K (10–25% on £519K genuine embedded freight)</span><span class="pill pmd">False-positive audit required before client presentation</span></div>
+  </div>
+</div>
+
+<!-- ─── ACTION PLAN ─── -->
+<div class="page" id="page-action-plan">
+  <div class="ph"><div class="ph-title">Action plan</div><div class="ph-sub">Opportunities from the active run, sequenced by horizon and effort. Each row is an engine output. Analyst notes are labelled separately.</div></div>
+
+  <div class="run-content run-kingsley">
+    <div class="card">
+      <div class="tbl-wrap">
+        <table><thead><tr><th>#</th><th>Action</th><th>Heuristic</th><th>Owner</th><th>Horizon</th><th>Effort</th><th>Impact</th><th>Saving estimate</th><th>Data to validate</th></tr></thead>
         <tbody>
-          <tr>
-            <td style="font-weight:700;color:var(--text3)">1</td>
-            <td><b>Data correction &amp; reclassification</b><br><span style="font-size:11px;color:var(--text2)">Fix 480+ unit price errors. Merge supplier name variants. Reclassify top 80% unclassified spend. Request cost centre from ERP.</span></td>
-            <td><span class="owner-p">Procurement</span> <span class="owner-f">Finance</span></td>
-            <td><span class="pill pbl">0–30 days</span></td>
-            <td><span class="pill pmd">M</span></td>
-            <td><span class="pill phi">High</span></td>
-            <td style="font-size:11px;color:var(--text3)">Enabler — unlocks all other actions</td>
-            <td style="font-size:11px;color:var(--text2)">Access to original invoices · ERP extract with cost centres</td>
-          </tr>
-          <tr>
-            <td style="font-weight:700;color:var(--text3)">2</td>
-            <td><b>IFS Courier — batching &amp; consolidated delivery</b><br><span style="font-size:11px;color:var(--text2)">992 lines at avg £27.85. Agree weekly consolidated schedule. Process change, not commercial negotiation.</span></td>
-            <td><span class="owner-o">Ops</span> <span class="owner-p">Procurement</span></td>
-            <td><span class="pill pbl">0–30 days</span></td>
-            <td><span class="pill plo">L</span></td>
-            <td><span class="pill pmd">M</span></td>
-            <td>£30K–£60K/yr</td>
-            <td style="font-size:11px;color:var(--text2)">Site delivery requirements · IFS account manager contact</td>
-          </tr>
-          <tr>
-            <td style="font-weight:700;color:var(--text3)">3</td>
-            <td><b>Amazon — P-card or corporate account</b><br><span style="font-size:11px;color:var(--text2)">638 sub-£500 lines at avg £49. Migrate to Amazon Business. Reduces AP overhead and enables VAT invoicing.</span></td>
-            <td><span class="owner-f">Finance</span> <span class="owner-p">Procurement</span></td>
-            <td><span class="pill pbl">0–30 days</span></td>
-            <td><span class="pill plo">L</span></td>
-            <td><span class="pill plo">L</span></td>
-            <td>£10K–£20K/yr</td>
-            <td style="font-size:11px;color:var(--text2)">Item categorisation (MRO vs. project) · Finance approval for P-card policy</td>
-          </tr>
-          <tr>
-            <td style="font-weight:700;color:var(--text3)">4</td>
-            <td><b>IT &amp; Software category review</b><br><span style="font-size:11px;color:var(--text2)">£9.1M across 312 suppliers. Licence audit + top 20 supplier consolidation. Highest-yield classified category.</span></td>
-            <td><span class="owner-p">Procurement</span></td>
-            <td><span class="pill pbl">30–90 days</span></td>
-            <td><span class="pill pmd">M</span></td>
-            <td><span class="pill phi">High</span></td>
-            <td>£0.4M–£0.9M</td>
-            <td style="font-size:11px;color:var(--text2)">IT licence audit · contract terms for top 20 suppliers · market benchmarks</td>
-          </tr>
-          <tr>
-            <td style="font-weight:700;color:var(--text3)">5</td>
-            <td><b>Logistics carrier framework</b><br><span style="font-size:11px;color:var(--text2)">True logistics spend £1.06M. Approach top 3 carriers with consolidated volume. Challenge embedded charges in upcoming renewals.</span></td>
-            <td><span class="owner-p">Procurement</span> <span class="owner-o">Ops</span></td>
-            <td><span class="pill pbl">30–90 days</span></td>
-            <td><span class="pill plo">L</span></td>
-            <td><span class="pill pmd">M</span></td>
-            <td>£50K–£130K</td>
-            <td style="font-size:11px;color:var(--text2)">Contract register · carrier rate cards · project delivery schedule</td>
-          </tr>
-          <tr>
-            <td style="font-weight:700;color:var(--text3)">6</td>
-            <td><b>VAT compliance review</b><br><span style="font-size:11px;color:var(--text2)">72.4% zero-VAT (£42.9M). Multi-jurisdiction review for exemption validity and input VAT recovery.</span></td>
-            <td><span class="owner-f">Finance</span></td>
-            <td><span class="pill pbl">30–90 days</span></td>
-            <td><span class="pill pmd">M</span></td>
-            <td><span class="pill phi">High</span></td>
-            <td>£0.3M–£1.0M</td>
-            <td style="font-size:11px;color:var(--text2)">Tax team + jurisdiction mapping · VAT treatment by supplier country</td>
-          </tr>
-          <tr>
-            <td style="font-weight:700;color:var(--text3)">7</td>
-            <td><b>Price variance analysis (H4)</b><br><span style="font-size:11px;color:var(--text2)">Re-run once unit price data corrected. Systematic comparison across top 50 suppliers vs. contract rates.</span></td>
-            <td><span class="owner-p">Procurement</span></td>
-            <td><span class="pill pbl">30–90 days</span></td>
-            <td><span class="pill pmd">M</span></td>
-            <td><span class="pill phi">High</span></td>
-            <td>£0.2M–£0.6M</td>
-            <td style="font-size:11px;color:var(--text2)">Corrected invoice file (AP review) · agreed unit prices / rate cards</td>
-          </tr>
-          <tr>
-            <td style="font-weight:700;color:var(--text3)">8</td>
-            <td><b>Supplier consolidation — Electrical category</b><br><span style="font-size:11px;color:var(--text2)">PSI Global (£3.2M), Down to Earth (£2.8M), Anord Mardix (£1.1M), Excise Electrical (£0.85M). Assess framework potential.</span></td>
-            <td><span class="owner-p">Procurement</span></td>
-            <td><span class="pill pbl">90+ days</span></td>
-            <td><span class="pill phi">H</span></td>
-            <td><span class="pill phi">High</span></td>
-            <td>£0.3M–£0.8M</td>
-            <td style="font-size:11px;color:var(--text2)">Contract terms for each supplier · spec equivalence confirmation · market rates</td>
-          </tr>
-          <tr>
-            <td style="font-weight:700;color:var(--text3)">9</td>
-            <td><b>Site-by-site analysis (H1)</b><br><span style="font-size:11px;color:var(--text2)">Cannot progress until site/cost centre dimension is added to the dataset. Highest potential impact once unlocked.</span></td>
-            <td><span class="owner-p">Procurement</span></td>
-            <td><span class="pill pbl">90+ days</span></td>
-            <td><span class="pill pmd">M</span></td>
-            <td><span class="pill phi">High</span></td>
-            <td>£0.3M–£1.2M</td>
-            <td style="font-size:11px;color:var(--text2)">ERP cost centre extract · FX normalisation table · site-level contract mapping</td>
-          </tr>
-          <tr>
-            <td style="font-weight:700;color:var(--text3)">10</td>
-            <td><b>One-off supplier reduction &amp; PSL enforcement</b><br><span style="font-size:11px;color:var(--text2)">180 one-off suppliers (24.6% of base). Review PSL compliance and route tail spend through existing approved suppliers.</span></td>
-            <td><span class="owner-p">Procurement</span> <span class="owner-o">Ops</span></td>
-            <td><span class="pill pbl">90+ days</span></td>
-            <td><span class="pill pmd">M</span></td>
-            <td><span class="pill pmd">M</span></td>
-            <td>£40K–£100K</td>
-            <td style="font-size:11px;color:var(--text2)">PSL (preferred supplier list) · approval workflow data · one-off order descriptions</td>
-          </tr>
-        </tbody>
-      </table>
+          <tr><td style="font-weight:700;color:var(--text3)">1</td><td><b>Andway Healthcare rate card review</b></td><td><span class="pill pgr" style="font-size:10px">H4</span></td><td>Procurement</td><td><span class="pill pbl" style="font-size:10px">0–30 days</span></td><td><span class="pill plo" style="font-size:10px">L</span></td><td><span class="pill pmd" style="font-size:10px">M</span></td><td>£20K–£60K</td><td style="font-size:11px">Rate card + product spec sheet</td></tr>
+          <tr><td style="font-weight:700;color:var(--text3)">2</td><td><b>Agency staff review — KIN and HER</b></td><td><span class="pill pgr" style="font-size:10px">H1</span></td><td>HR / Ops / Procurement</td><td><span class="pill pbl" style="font-size:10px">0–30 days</span></td><td><span class="pill pmd" style="font-size:10px">M</span></td><td><span class="pill phi" style="font-size:10px">H</span></td><td>£50K–£150K</td><td style="font-size:11px">Bed occupancy · headcount · construction schedule</td></tr>
+          <tr><td style="font-weight:700;color:var(--text3)">3</td><td><b>AP batching — care supplies and food ordering</b></td><td><span class="pill pgr" style="font-size:10px">H5</span></td><td>Finance / Ops</td><td><span class="pill pbl" style="font-size:10px">0–30 days</span></td><td><span class="pill plo" style="font-size:10px">L</span></td><td><span class="pill pmd" style="font-size:10px">M</span></td><td>£40K–£100K</td><td style="font-size:11px">AP cost per invoice (Finance)</td></tr>
+          <tr><td style="font-weight:700;color:var(--text3)">4</td><td><b>Food supplier consolidation — Brakes Bros framework</b></td><td><span class="pill pgr" style="font-size:10px">H3</span></td><td>Procurement / Catering</td><td><span class="pill pmd" style="font-size:10px">30–90 days</span></td><td><span class="pill pmd" style="font-size:10px">M</span></td><td><span class="pill phi" style="font-size:10px">H</span></td><td>£80K–£200K</td><td style="font-size:11px">PSL · contract terms · site preferences</td></tr>
+          <tr><td style="font-weight:700;color:var(--text3)">5</td><td><b>Utility benchmarking — electricity and gas</b></td><td><span class="pill pgr" style="font-size:10px">H1</span></td><td>Finance / Facilities</td><td><span class="pill pmd" style="font-size:10px">30–90 days</span></td><td><span class="pill pmd" style="font-size:10px">M</span></td><td><span class="pill pmd" style="font-size:10px">M</span></td><td>£30K–£100K</td><td style="font-size:11px">Meter data · tariff type · framework status</td></tr>
+          <tr><td style="font-weight:700;color:var(--text3)">6</td><td><b>Target Healthcare REIT lease portfolio review</b></td><td><span class="pill pgr" style="font-size:10px">H2</span></td><td>Finance / Legal</td><td><span class="pill phi" style="font-size:10px">90+ days</span></td><td><span class="pill phi" style="font-size:10px">H</span></td><td><span class="pill phi" style="font-size:10px">H</span></td><td>Strategic</td><td style="font-size:11px">Lease register · market rent benchmarks</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+    <div class="disclaimer"><b>Required disclaimer:</b> All saving estimates are heuristic-based and directional. They have not been market-tested, audited, or verified against contracts. No savings are guaranteed. No figures should be communicated to suppliers or included in business cases without individual validation by a qualified procurement professional.</div>
+  </div>
+
+  <div class="run-content run-aidan" style="display:none">
+    <div class="card">
+      <div class="tbl-wrap">
+        <table><thead><tr><th>#</th><th>Action</th><th>Heuristic</th><th>Owner</th><th>Horizon</th><th>Effort</th><th>Impact</th><th>Saving estimate</th><th>Data to validate</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:700;color:var(--text3)">1</td><td><b>Data correction + ERP site extract</b></td><td><span class="pill pgr" style="font-size:10px">H4 / H1</span></td><td>Procurement / Finance</td><td><span class="pill pbl" style="font-size:10px">0–30 days</span></td><td><span class="pill pmd" style="font-size:10px">M</span></td><td><span class="pill phi" style="font-size:10px">H</span></td><td>Enabler</td><td style="font-size:11px">Invoice copies · ERP access</td></tr>
+          <tr><td style="font-weight:700;color:var(--text3)">2</td><td><b>IFS Courier batching + Amazon P-card</b></td><td><span class="pill pgr" style="font-size:10px">H5</span></td><td>Ops / Finance</td><td><span class="pill pbl" style="font-size:10px">0–30 days</span></td><td><span class="pill plo" style="font-size:10px">L</span></td><td><span class="pill pmd" style="font-size:10px">M</span></td><td>£40K–£80K</td><td style="font-size:11px">AP cost · order urgency profile</td></tr>
+          <tr><td style="font-weight:700;color:var(--text3)">3</td><td><b>IT &amp; Software category review</b></td><td><span class="pill pgr" style="font-size:10px">H3</span></td><td>Procurement / IT</td><td><span class="pill pmd" style="font-size:10px">30–90 days</span></td><td><span class="pill pmd" style="font-size:10px">M</span></td><td><span class="pill phi" style="font-size:10px">H</span></td><td>£0.4M–£0.9M</td><td style="font-size:11px">IT licence audit · market benchmarks</td></tr>
+          <tr><td style="font-weight:700;color:var(--text3)">4</td><td><b>Logistics carrier framework</b></td><td><span class="pill pgr" style="font-size:10px">H6</span></td><td>Procurement / Ops</td><td><span class="pill pmd" style="font-size:10px">30–90 days</span></td><td><span class="pill plo" style="font-size:10px">L</span></td><td><span class="pill pmd" style="font-size:10px">M</span></td><td>£50K–£130K</td><td style="font-size:11px">Contract register · carrier rate cards</td></tr>
+          <tr><td style="font-weight:700;color:var(--text3)">5</td><td><b>Price variance + supplier consolidation (post data fix)</b></td><td><span class="pill pgr" style="font-size:10px">H4 / H3</span></td><td>Procurement</td><td><span class="pill phi" style="font-size:10px">90+ days</span></td><td><span class="pill pmd" style="font-size:10px">M</span></td><td><span class="pill phi" style="font-size:10px">H</span></td><td>£0.2M–£0.6M</td><td style="font-size:11px">Corrected data · rate cards · contracts</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+    <div class="disclaimer"><b>Required disclaimer:</b> All saving estimates are heuristic-based and directional. No savings are guaranteed. Figures should not be communicated to suppliers or included in business cases without individual validation.</div>
+  </div>
+</div>
+
+<!-- ─── DATA QUALITY ─── -->
+<div class="page" id="page-data-quality">
+  <div class="ph"><div class="ph-title">Data quality</div><div class="ph-sub">Each gap is interpreted as a signal about procurement maturity, linked to a specific missed saving or control risk. Applies to the active run.</div></div>
+
+  <div class="run-content run-kingsley">
+    <div class="card">
+      <table><thead><tr><th>Gap</th><th>Maturity signal</th><th>Consequence</th><th>Remediation</th></tr></thead>
+      <tbody>
+        <tr><td><b>17,086 zero unit costs</b></td><td>Construction/capex outside P2P scope</td><td>H4 not applicable to capex categories; unit-level comparison unreliable</td><td>Configure ERP for capex POs with unit cost field</td></tr>
+        <tr><td><b>18.1% no-PO spend</b></td><td>Mixed — largely contractual, some genuine gap</td><td>Transport (£531K) and repairs at maverick risk — but leasehold and construction no-PO is structural, not a control failure</td><td>PO policy review for operational categories only</td></tr>
+        <tr><td><b>No contract register</b></td><td>No contract lifecycle management</td><td>H4 limited to indicator — contract leakage unquantifiable</td><td>Rate cards for top 20 suppliers (priority: Andway, Bunzl, Brakes Bros)</td></tr>
+        <tr><td><b>No prior year data</b></td><td>No baseline for trend analysis</td><td>H2 partial — trend direction unconfirmed</td><td>Request FY2023/24 extract in same format</td></tr>
+        <tr><td><b>Supplier name variants</b></td><td>No supplier master governance</td><td>Target Healthcare REIT appears as 5 entities — true group spend understated</td><td>Supplier master cleanse; legal entity consolidation</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+
+  <div class="run-content run-aidan" style="display:none">
+    <div class="card">
+      <table><thead><tr><th>Gap</th><th>Maturity signal</th><th>Consequence</th><th>Remediation</th></tr></thead>
+      <tbody>
+        <tr><td><b>No site / cost centre</b></td><td>No BU accountability for spend</td><td>H1 blocked — site analysis not possible on current data</td><td>ERP extract with cost centre. Join key available (invoice reference). 1 day effort.</td></tr>
+        <tr><td><b>480 unit price anomalies</b></td><td>No P2P input validation</td><td>H4 disabled — price variance unquantifiable</td><td>AP team correction pass. 1–2 weeks. See H4 remediation workflow.</td></tr>
+        <tr><td><b>61.1% unclassified spend</b></td><td>No category management ownership</td><td>H3 covers 38.9% of spend only</td><td>Reclassification exercise. 4–6 weeks.</td></tr>
+        <tr><td><b>Multi-currency unnormalised</b></td><td>No group procurement coordination</td><td>Cross-region price comparison unreliable</td><td>FX rate table. 2 hours.</td></tr>
+        <tr><td><b>Supplier name variants</b></td><td>No supplier master governance</td><td>R&M Europe: 4 names — true concentration understated</td><td>Master data cleanse. Medium effort.</td></tr>
+        <tr><td><b>No prior year data</b></td><td>No historical baseline</td><td>H2 partial</td><td>FY2023 extract in same format</td></tr>
+        <tr><td><b>No contract register</b></td><td>No contract lifecycle management</td><td>Contract leakage undetectable</td><td>Rate cards for top 20 suppliers</td></tr>
+      </tbody></table>
     </div>
   </div>
 </div>
 
-<!-- ======== EXECUTIVE OUTPUT ======== -->
+<!-- ─── EXECUTIVE OUTPUT ─── -->
 <div class="page" id="page-executive">
-  <div class="ph"><div class="ph-title">Executive output</div><div class="ph-sub">Five-question narrative for commercial conversations. Designed to support expert judgement — not replace it.</div></div>
+  <div class="ph"><div class="ph-title">Executive output</div><div class="ph-sub">Five-question narrative for commercial conversations. Answers are drawn from engine findings. All saving estimates are indicative.</div></div>
+
+  <div class="run-content run-kingsley">
+    <div class="card">
+      <div style="font-size:14px;font-weight:700;margin-bottom:.5rem;padding-bottom:.5rem;border-bottom:0.5px solid var(--border)">1 — Where should we look first?</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.75;margin-bottom:.75rem">The data is structurally sound — site, entity, and category dimensions are present. Analysis can proceed on the operating spend base immediately. The highest-priority action is obtaining the Andway Healthcare rate card, which would convert a detected price variance indicator into a quantified contract review. In parallel, the agency staff concentration at King's Court and Heron Lodge warrants investigation alongside the construction schedule at those sites.</div>
+      <div style="font-size:14px;font-weight:700;margin:.75rem 0 .5rem;padding-bottom:.5rem;border-bottom:0.5px solid var(--border)">2 — Why does it matter?</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.75;margin-bottom:.75rem">The operating spend base (food, care supplies, agency, utilities, cleaning) represents ~£7M of the £24.8M total. The remainder is construction activity and leasehold — both structurally contracted and not addressable through standard procurement levers. The engine's analysis focuses on the operating spend base as the addressable area.</div>
+      <div style="font-size:14px;font-weight:700;margin:.75rem 0 .5rem;padding-bottom:.5rem;border-bottom:0.5px solid var(--border)">3 — What is the realistic size of the prize?</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:.75rem 0">
+        <div style="background:var(--green-l);border:0.5px solid var(--green-m);border-radius:var(--r);padding:10px 12px"><div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Order batching</div><div style="font-size:18px;font-weight:700;color:var(--green)">£40K–£100K</div><div style="font-size:10px;color:var(--green)">High confidence · 0–30 days</div></div>
+        <div style="background:var(--amber-l);border:0.5px solid var(--amber-m);border-radius:var(--r);padding:10px 12px"><div style="font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Agency review</div><div style="font-size:18px;font-weight:700;color:var(--amber)">£50K–£150K</div><div style="font-size:10px;color:var(--amber)">Medium confidence · 0–30 days</div></div>
+        <div style="background:var(--amber-l);border:0.5px solid var(--amber-m);border-radius:var(--r);padding:10px 12px"><div style="font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Food consolidation</div><div style="font-size:18px;font-weight:700;color:var(--amber)">£80K–£200K</div><div style="font-size:10px;color:var(--amber)">Medium confidence · 30–90 days</div></div>
+        <div style="background:var(--blue-l);border:0.5px solid var(--blue-m);border-radius:var(--r);padding:10px 12px"><div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Total indicative</div><div style="font-size:18px;font-weight:700;color:var(--blue)">£190K–£510K</div><div style="font-size:10px;color:var(--blue)">Assumptions-based · 12 months</div></div>
+      </div>
+      <div style="font-size:14px;font-weight:700;margin:.75rem 0 .5rem;padding-bottom:.5rem;border-bottom:0.5px solid var(--border)">4 — What evidence do we have?</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.75;margin-bottom:.75rem">Strong structural evidence: site and category data present; wipes price variance confirmed across 75+ orders; no-PO gap quantified. Partial evidence: agency cost by site visible but root cause unknown. No direct evidence: contract leakage, volume discount compliance, or utility rate benchmarks — these require the contract register and rate cards not yet supplied.</div>
+      <div style="font-size:14px;font-weight:700;margin:.75rem 0 .5rem;padding-bottom:.5rem;border-bottom:0.5px solid var(--border)">5 — What next, in what order?</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.75">1. Obtain Andway rate card (1 hour). 2. Review KIN/HER agency spend against occupancy data (1 week). 3. Agree AP batching policy with Finance for care supplies and food (1 week). 4. Food supplier consolidation strategy with Brakes Bros (30–60 days). 5. Utility framework review (30–90 days).</div>
+    </div>
+    <div class="disclaimer"><b>Required disclaimer:</b> All saving estimates are indicative and heuristic-based. They have not been market-tested, audited, or verified against contracts. No savings are guaranteed. No benchmarks are implied unless explicitly stated as assumptions. PSL accepts no liability for decisions taken on the basis of these indicative figures without completion of the recommended validation steps.</div>
+  </div>
+
+  <div class="run-content run-aidan" style="display:none">
+    <div class="card">
+      <div style="font-size:14px;font-weight:700;margin-bottom:.5rem;padding-bottom:.5rem;border-bottom:0.5px solid var(--border)">1 — Where should we look first?</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.75;margin-bottom:.75rem">Start with the data, not the suppliers. 61% of spend is unclassified and 480 price records are corrupted. Any commercial conversation before these are corrected risks false conclusions. The first 30 days should be internal: data correction, reclassification, and requesting the ERP site extract.</div>
+      <div style="font-size:14px;font-weight:700;margin:.75rem 0 .5rem;padding-bottom:.5rem;border-bottom:0.5px solid var(--border)">3 — What is the realistic size of the prize?</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:.75rem 0">
+        <div style="background:var(--green-l);border:0.5px solid var(--green-m);border-radius:var(--r);padding:10px 12px"><div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Batching / AP</div><div style="font-size:18px;font-weight:700;color:var(--green)">£60K–£120K</div><div style="font-size:10px;color:var(--green)">High confidence · 0–30 days</div></div>
+        <div style="background:var(--amber-l);border:0.5px solid var(--amber-m);border-radius:var(--r);padding:10px 12px"><div style="font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Logistics</div><div style="font-size:18px;font-weight:700;color:var(--amber)">£50K–£130K</div><div style="font-size:10px;color:var(--amber)">Medium confidence · 30–90 days</div></div>
+        <div style="background:var(--amber-l);border:0.5px solid var(--amber-m);border-radius:var(--r);padding:10px 12px"><div style="font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">IT &amp; Software</div><div style="font-size:18px;font-weight:700;color:var(--amber)">£0.4M–£0.9M</div><div style="font-size:10px;color:var(--amber)">Medium confidence · 30–90 days</div></div>
+        <div style="background:var(--blue-l);border:0.5px solid var(--blue-m);border-radius:var(--r);padding:10px 12px"><div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Total indicative</div><div style="font-size:18px;font-weight:700;color:var(--blue)">£1.1M–£3.0M</div><div style="font-size:10px;color:var(--blue)">Assumptions-based · 12 months</div></div>
+      </div>
+    </div>
+    <div class="disclaimer"><b>Required disclaimer:</b> All saving estimates are indicative and heuristic-based. No savings are guaranteed. No figures should be communicated to suppliers or used in business cases without individual validation by a qualified procurement professional.</div>
+  </div>
+</div>
+
+<!-- ─── DIAGNOSTICS: RUN COMPARISON ─── -->
+<div class="page" id="page-diagnostics">
+  <div class="ph"><div class="ph-title">Run comparison</div><div class="ph-sub">Diagnostic view. Shows how data maturity affects insight depth across two engine runs. This is not a primary output of the engine.</div></div>
+
+  <div class="diag-notice">
+    <b>Diagnostic use only.</b> This view compares two separate engine runs to illustrate how the presence or absence of data dimensions affects confidence and heuristic activation. It is not a deliverable. It is not the default view. It exists to support analyst training and client conversations about data investment. Neither run is "better" — they produce different depth of output from the same invariant engine.
+  </div>
+
+  <div class="compare-grid">
+    <div class="compare-card" style="border-top:3px solid var(--green)">
+      <div class="compare-name" style="color:var(--green)">Run A — Kingsley FY2024/25</div>
+      <div class="compare-row"><span class="compare-label">Total spend</span><span class="compare-val">£24.8M</span></div>
+      <div class="compare-row"><span class="compare-label">Lines</span><span class="compare-val">307,820</span></div>
+      <div class="compare-row"><span class="compare-label">Suppliers</span><span class="compare-val">1,374</span></div>
+      <div class="compare-row"><span class="compare-label">Site dimension</span><span class="compare-val ok">51 sites</span></div>
+      <div class="compare-row"><span class="compare-label">Category (ERP)</span><span class="compare-val ok">Yes — 217 categories</span></div>
+      <div class="compare-row"><span class="compare-label">Entity breakdown</span><span class="compare-val ok">47 companies</span></div>
+      <div class="compare-row"><span class="compare-label">Unit cost quality</span><span class="compare-val" style="color:var(--amber)">94% — 17K zero rows</span></div>
+      <div class="compare-row"><span class="compare-label">PO coverage</span><span class="compare-val" style="color:var(--amber)">82% (18% no-PO)</span></div>
+      <div class="compare-row"><span class="compare-label">Currency</span><span class="compare-val ok">All GBP</span></div>
+      <div class="compare-row"><span class="compare-label">H1 active</span><span class="compare-val ok">Yes</span></div>
+      <div class="compare-row"><span class="compare-label">H4 active</span><span class="compare-val" style="color:var(--amber)">Conditional</span></div>
+      <div class="compare-row"><span class="compare-label">L1 confidence</span><span class="compare-val ok">78%</span></div>
+    </div>
+    <div class="compare-card" style="border-top:3px solid var(--blue)">
+      <div class="compare-name" style="color:var(--blue)">Run B — Aidan Strain FY2024</div>
+      <div class="compare-row"><span class="compare-label">Total spend</span><span class="compare-val">£59.2M</span></div>
+      <div class="compare-row"><span class="compare-label">Lines</span><span class="compare-val">18,703</span></div>
+      <div class="compare-row"><span class="compare-label">Suppliers</span><span class="compare-val">732</span></div>
+      <div class="compare-row"><span class="compare-label">Site dimension</span><span class="compare-val warn">Absent — H1 blocked</span></div>
+      <div class="compare-row"><span class="compare-label">Category (ERP)</span><span class="compare-val warn">No — auto-classified</span></div>
+      <div class="compare-row"><span class="compare-label">Entity breakdown</span><span class="compare-val warn">Absent</span></div>
+      <div class="compare-row"><span class="compare-label">Unit cost quality</span><span class="compare-val warn">480 anomalies — H4 disabled</span></div>
+      <div class="compare-row"><span class="compare-label">PO coverage</span><span class="compare-val" style="color:var(--amber)">Partial</span></div>
+      <div class="compare-row"><span class="compare-label">Currency</span><span class="compare-val warn">Multi — unnormalised</span></div>
+      <div class="compare-row"><span class="compare-label">H1 active</span><span class="compare-val warn">No — site absent</span></div>
+      <div class="compare-row"><span class="compare-label">H4 active</span><span class="compare-val warn">No — data disabled</span></div>
+      <div class="compare-row"><span class="compare-label">L1 confidence</span><span class="compare-val" style="color:var(--amber)">45%</span></div>
+    </div>
+  </div>
+
   <div class="card">
-    <div class="eq">1 — Where should we look first?</div>
-    <div class="eb"><b>Start with the data, not the suppliers.</b> 61% of spend (£36M) is unclassified and 480+ price records are corrupted by data entry errors. Any commercial conversation held before this is corrected risks presenting false conclusions and destroys credibility. The first 30 days should be internal — structured reclassification and data correction, not supplier meetings.</div>
-    <div class="eb">Once data is clean, three areas offer the clearest commercial attention: <b>IT &amp; Software (£9.1M, 312 suppliers)</b> where fragmentation is extreme; <b>logistics (true spend £1.06M, 146+ carriers)</b> where a framework agreement delivers quick wins; and <b>sub-£500 invoices (5,385)</b> where AP processing cost alone justifies immediate action.</div>
-
-    <div class="eq">2 — Why does it matter?</div>
-    <div class="eb">The fragmentation visible in this dataset is typical of a project-driven, multi-site operation that has scaled without a category management framework. The commercial consequence is lost volume leverage and inconsistent pricing. The operational consequence is significant AP overhead. The strategic consequence is that no single person currently has a clear view of what is being spent, with whom, and under what terms.</div>
-
-    <div class="eq">3 — What is the realistic size of the prize?</div>
-    <div class="eb"><b>These are directional estimates based on embedded procurement heuristics, not audited savings. They are hypotheses requiring validation, not commitments to stakeholders.</b></div>
-    <div class="prize-g">
-      <div class="prize-i" style="background:var(--blue-l);border:0.5px solid var(--blue-m)"><div class="pl" style="color:var(--blue)">Supplier consolidation</div><div class="pv" style="color:var(--blue)">£0.8M–£2.1M</div><div class="pc" style="color:var(--blue)">Medium confidence · 90+ days</div></div>
-      <div class="prize-i" style="background:var(--green-l);border:0.5px solid var(--green-m)"><div class="pl" style="color:var(--green)">Order batching / AP</div><div class="pv" style="color:var(--green)">£60K–£120K</div><div class="pc" style="color:var(--green)">High confidence · 0–30 days</div></div>
-      <div class="prize-i" style="background:var(--amber-l);border:0.5px solid var(--amber-m)"><div class="pl" style="color:var(--amber)">Logistics framework</div><div class="pv" style="color:var(--amber)">£50K–£130K</div><div class="pc" style="color:var(--amber)">Medium conf · 30–90 days</div></div>
-      <div class="prize-i" style="background:var(--red-l);border:0.5px solid var(--red-m)"><div class="pl" style="color:var(--red)">Price variance (post fix)</div><div class="pv" style="color:var(--red)">£0.2M–£0.6M</div><div class="pc" style="color:var(--red)">Low conf · data first</div></div>
-      <div class="prize-i" style="background:var(--amber-l);border:0.5px solid var(--amber-m)"><div class="pl" style="color:var(--amber)">VAT compliance</div><div class="pv" style="color:var(--amber)">£0.3M–£1.0M</div><div class="pc" style="color:var(--amber)">Low conf · tax review</div></div>
-      <div class="prize-i" style="background:var(--bg2);border:0.5px solid var(--border)"><div class="pl" style="color:var(--text2)">Total indicative range</div><div class="pv">£1.4M–£4.0M</div><div class="pc" style="color:var(--text3)">Assumptions-based · 12 months</div></div>
-    </div>
-
-    <div class="eq">4 — What evidence do we have?</div>
-    <div class="eb">The data provides <b>strong structural evidence</b> of fragmentation: 732 suppliers, top 10 = 25.6% of spend, cable ties from 15 suppliers, IFS Courier 992 delivery lines at £28 average. It provides <b>partial evidence</b> of price variance — 480 corrupted records prevent clean unit-price analysis without a correction pass. It provides <b>no direct evidence</b> of contract leakage, site-level behaviour, or volume discount compliance. Those require additional data not present in this extract.</div>
-
-    <div class="eq">5 — What should we do next, and in what order?</div>
-    <div class="card" style="margin-top:.5rem;margin-bottom:0;padding:.75rem 1rem">
-      <div class="act-row"><div class="act-n" style="background:var(--blue-l);color:var(--blue)">1</div><div class="act-body"><div class="act-title">Data correction &amp; reclassification — 0–30 days · Procurement + Finance</div><div class="act-desc">Fix unit price errors, merge name variants, reclassify unclassified spend, request ERP cost centres. All subsequent analysis depends on this.</div></div></div>
-      <div class="act-row"><div class="act-n" style="background:var(--green-l);color:var(--green)">2</div><div class="act-body"><div class="act-title">IFS Courier batching + Amazon P-card — 0–30 days · Ops · Low effort</div><div class="act-desc">Process changes, not commercial negotiations. Fast credibility-builders. Estimated saving: £40K–£80K/yr.</div></div></div>
-      <div class="act-row"><div class="act-n" style="background:var(--amber-l);color:var(--amber)">3</div><div class="act-body"><div class="act-title">IT &amp; Software category review — 30–90 days · Category manager + IT</div><div class="act-desc">Highest-yield classified category. Software licence audit in parallel. Even 10% saving = £900K. Requires market benchmarking to confirm.</div></div></div>
-      <div class="act-row"><div class="act-n" style="background:var(--blue-l);color:var(--blue)">4</div><div class="act-body"><div class="act-title">Logistics carrier framework + VAT review — 30–90 days · Procurement + Finance</div><div class="act-desc">Carrier framework on £1.06M true logistics spend. Parallel VAT compliance review with tax team. Both are preparation-intensive but high-impact.</div></div></div>
-      <div class="act-row"><div class="act-n" style="background:var(--red-l);color:var(--red)">5</div><div class="act-body"><div class="act-title">Price variance &amp; supplier consolidation — 90+ days · After clean data</div><div class="act-desc">Price variance requires corrected invoice file first. Electrical supplier consolidation (£8M+ addressable) is highest structural lever once data and site dimensions are in place.</div></div></div>
-    </div>
-  </div>
-  <div class="disclaimer" style="margin-top:1rem">
-    <b>Assumptions vs. evidence — required disclaimer.</b> All saving ranges are heuristic-based, drawn from sector experience in construction, engineering, and infrastructure procurement. They represent directional hypotheses, not audited projections. No benchmarks have been stated unless explicitly labelled as assumptions. No savings should be reported to stakeholders, included in business cases, or communicated to suppliers until each opportunity has been individually validated by a qualified procurement professional with access to the relevant contracts, market data, and operational constraints. PSL accepts no liability for decisions taken on the basis of these indicative figures without formal validation.
+    <div class="card-title">What this comparison shows</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.75">Run A produces higher-confidence outputs because the source system (Workday ERP) was configured to capture site, entity, and category dimensions. Run B produces lower-confidence outputs because those dimensions were not captured at point of entry. The engine ran identically in both cases — the same six heuristics, the same confidence rules, the same output structure. What changed was the data available to populate each heuristic.</div>
   </div>
 </div>
 
-<!-- ======== 5-SLIDE NARRATIVE ======== -->
-<div class="page" id="page-slides">
-  <div class="ph"><div class="ph-title">5-slide board narrative</div><div class="ph-sub">Headlines and bullet points. Ready to transfer into PowerPoint. Each slide includes a required disclaimer note.</div></div>
+<!-- ─── DIAGNOSTICS: ENRICHMENT MAP ─── -->
+<div class="page" id="page-enrichment">
+  <div class="ph"><div class="ph-title">Enrichment map</div><div class="ph-sub">Diagnostic view. Shows what additional datasets would unlock, and in what order they should be prioritised. Applies to the active run.</div></div>
 
-  <div class="slide">
-    <div class="slide-num">Slide 1 of 5</div>
-    <div class="slide-label">Context &amp; scope</div>
-    <div class="slide-title">What we looked at, and why it matters</div>
-    <div class="slide-stat-row">
-      <div class="slide-stat"><div class="sv">£59.2M</div><div class="sl">Total spend FY2024</div></div>
-      <div class="slide-stat"><div class="sv">18,703</div><div class="sl">Invoice lines analysed</div></div>
-      <div class="slide-stat"><div class="sv">732</div><div class="sl">Active suppliers</div></div>
-      <div class="slide-stat"><div class="sv">6</div><div class="sl">Opportunity lenses applied</div></div>
+  <div class="diag-notice">
+    <b>Diagnostic use only.</b> This view supports analyst planning and client conversations about data investment. It is not a deliverable.
+  </div>
+
+  <div class="run-content run-kingsley">
+    <div class="card">
+      <table><thead><tr><th>Dataset</th><th>Join key</th><th>Heuristic unlocked</th><th>Confidence uplift</th><th>Effort to obtain</th><th>Priority</th></tr></thead>
+      <tbody>
+        <tr><td><b>Andway contract rate card</b></td><td>Supplier + Item description</td><td>H4 → contract leakage quantified</td><td>+++ High</td><td>1 hour</td><td><span class="pill phi">Highest</span></td></tr>
+        <tr><td><b>Prior year spend (FY2023/24)</b></td><td>Supplier + Category + Period</td><td>H2 → trend direction confirmed</td><td>++ Medium</td><td>1 day</td><td><span class="pill phi">High</span></td></tr>
+        <tr><td><b>Budget / cost centre codes</b></td><td>GL code or cost centre</td><td>Budget vs. actual — new output</td><td>+++ High for capex</td><td>1–2 days</td><td><span class="pill pmd">Medium</span></td></tr>
+        <tr><td><b>Top-20 supplier rate cards</b></td><td>Supplier + item/category</td><td>H4 → price leakage across categories</td><td>+++ High</td><td>2–4 weeks</td><td><span class="pill pmd">Medium</span></td></tr>
+        <tr><td><b>Canonical supplier master</b></td><td>Supplier name (fuzzy match)</td><td>H3 → true group concentration</td><td>++ Medium</td><td>1–3 days</td><td><span class="pill pgr">Lower</span></td></tr>
+      </tbody></table>
     </div>
-    <ul class="slide-bullets">
-      <li>This analysis covers FY2024 invoice line data exported from the ERP/P2P system. <b>All 6 independent verification checks passed before analysis began.</b></li>
-      <li>The goal is not accounting accuracy — it is <b>speed to credible commercial insight</b>, identifying where expert procurement attention should be directed first.</li>
-      <li>This tool supports analyst judgement. It does not replace it. <b>Every finding must be validated before any supplier conversation takes place.</b></li>
-      <li>Data quality issues were identified, documented, and — where material — used to disable outputs that could mislead. See Data Quality section for detail.</li>
-    </ul>
-    <div class="slide-note">Disclaimer: Analysis prepared by PSL. Indicative only. Not a substitute for professional procurement advice or formal market testing.</div>
   </div>
 
-  <div class="slide">
-    <div class="slide-num">Slide 2 of 5</div>
-    <div class="slide-label">Spend landscape</div>
-    <div class="slide-title">The spend base is fragmented — and largely unclassified</div>
-    <ul class="slide-bullets">
-      <li><b>61% of spend (£36M) has no category classification</b> — the most significant finding. This is a procurement maturity signal, not a data error. It means no one currently owns category accountability for most of the cost base.</li>
-      <li>Of what is classified: IT &amp; Software is the largest at £9.1M (312 suppliers). Electrical Equipment, Subcontract Services, and Plant Hire follow.</li>
-      <li><b>The top 10 suppliers account for only 25.6% of total spend</b> — a highly fragmented base. Sector best practice for comparable operations: 60–70% concentration. This represents significant lost volume leverage.</li>
-      <li>72.4% of spend (£42.9M) carries zero VAT — a proportion that warrants a formal tax review before any commercial conclusions are drawn. Finance must validate.</li>
-    </ul>
-    <div class="slide-note">Assumption: Sector concentration benchmark is a heuristic from comparable construction/engineering operations. It has not been independently verified for this specific entity.</div>
-  </div>
-
-  <div class="slide">
-    <div class="slide-num">Slide 3 of 5</div>
-    <div class="slide-label">Key findings</div>
-    <div class="slide-title">Three structural issues, two quick wins, one blocker</div>
-    <ul class="slide-bullets">
-      <li><b>Structural issue 1 — Supplier fragmentation:</b> cable ties from 15 suppliers; transport from 146 suppliers (avg £3.7K each); IT &amp; Software from 312 suppliers. Volume leverage is being systematically lost across the spend base.</li>
-      <li><b>Structural issue 2 — Unclassified spend:</b> £36M without a category home means no ownership, no benchmark, no consolidation possible. Reclassification is a prerequisite for all commercial activity.</li>
-      <li><b>Structural issue 3 — Data quality:</b> 480+ price records disabled due to suspected quantity/value data entry errors. Price variance analysis (potentially £0.2M–£0.6M) cannot be safely run until corrected. This is a P2P control failure.</li>
-      <li><b>Quick win 1 — Order batching:</b> IFS Courier has 992 delivery lines at avg £28. 144 days with multiple same-day deliveries. A consolidated delivery schedule requires no commercial negotiation and saves an estimated £30K–£60K immediately.</li>
-      <li><b>Quick win 2 — AP cost reduction:</b> 53.5% of invoices are below £500. Estimated AP processing cost: £135K/yr on sub-£500 invoices alone. A minimum order policy and P-card for tail spend is achievable within 30 days.</li>
-    </ul>
-    <div class="slide-note">Evidence vs. assumption: Fragmentation figures are drawn directly from the data. Saving estimates are heuristic-based and have not been market-tested. All require validation.</div>
-  </div>
-
-  <div class="slide">
-    <div class="slide-num">Slide 4 of 5</div>
-    <div class="slide-label">Size of the prize</div>
-    <div class="slide-title">Indicative savings range: £1.4M–£4.0M over 12 months</div>
-    <div class="slide-stat-row">
-      <div class="slide-stat"><div class="sv" style="color:var(--green)">£60K–£120K</div><div class="sl">High confidence · 0–30 days</div></div>
-      <div class="slide-stat"><div class="sv" style="color:var(--amber)">£0.4M–£1.1M</div><div class="sl">Medium confidence · 30–90 days</div></div>
-      <div class="slide-stat"><div class="sv" style="color:var(--blue)">£1.0M–£2.8M</div><div class="sl">Structural · 90+ days</div></div>
-    </div>
-    <ul class="slide-bullets">
-      <li>Figures are derived from embedded procurement heuristics calibrated to construction/engineering/infrastructure sector benchmarks. <b>They are directional hypotheses, not audited or committed savings.</b></li>
-      <li>The highest-confidence opportunity (order batching, AP cost) is also the smallest in value. This is intentional — quick credibility-builders first, structural change second.</li>
-      <li>The largest single lever (supplier consolidation, £0.8M–£2.1M) is also the most dependent on data quality improvements. It cannot be safely pursued until the reclassification exercise is complete.</li>
-      <li>Price variance (H4) output has been disabled pending data correction. This range (£0.2M–£0.6M) will be updated once corrected data is available. It is excluded from the totals above.</li>
-    </ul>
-    <div class="slide-note">Required disclaimer: These saving ranges must not be used in business cases, communicated to suppliers, or reported as confirmed savings without individual validation of each opportunity by a qualified procurement professional.</div>
-  </div>
-
-  <div class="slide">
-    <div class="slide-num">Slide 5 of 5</div>
-    <div class="slide-label">Recommended next steps</div>
-    <div class="slide-title">Five actions, sequenced for credibility and impact</div>
-    <ul class="slide-bullets">
-      <li><b>Action 1 (0–30 days) · Procurement + Finance:</b> Data correction and reclassification. Fix unit price errors, merge supplier name variants, reclassify £36M unclassified spend, request ERP cost centre extract. This is not optional — all subsequent work depends on it.</li>
-      <li><b>Action 2 (0–30 days) · Ops:</b> IFS Courier consolidated delivery schedule + Amazon Business account. Process changes only. No supplier negotiation required. Demonstrates immediate value while structural work begins.</li>
-      <li><b>Action 3 (30–90 days) · Procurement:</b> IT &amp; Software category strategy. Licence audit + top 20 supplier consolidation. Highest-yield classified category. Even 10% saving = £900K (assumption — requires market test).</li>
-      <li><b>Action 4 (30–90 days) · Procurement + Finance:</b> Logistics carrier framework on £1.06M true spend. Parallel VAT compliance review. Both are preparation-intensive but high-impact.</li>
-      <li><b>Action 5 (90+ days) · Procurement:</b> Price variance analysis (once data corrected) + electrical supplier consolidation (PSI Global, Down to Earth, Anord Mardix, Excise Electrical: £8M+ combined). Largest structural lever once data and site dimensions are in place.</li>
-    </ul>
-    <div class="slide-note">Prepared by PSL · [CLIENT NAME] · FY[YEAR] · Analyst-operated · This document is confidential and intended solely for the named client.</div>
-  </div>
-</div>
-
-<!-- ======== EMAIL SUMMARY ======== -->
-<div class="page" id="page-email">
-  <div class="ph"><div class="ph-title">Executive summary — email version</div><div class="ph-sub">One-page narrative suitable for email or PDF attachment. Copy and adapt as required.</div></div>
-  <div class="email-box">
-    <div class="email-header">
-      <span class="ef">To: </span><span class="ev">[Client Senior Stakeholder]</span>&nbsp;&nbsp;
-      <span class="ef">From: </span><span class="ev">PSL Procurement Intelligence</span>&nbsp;&nbsp;
-      <span class="ef">Re: </span><span class="ev">Initial Spend Analysis — [CLIENT NAME] FY[YEAR]</span>&nbsp;&nbsp;
-      <span class="ef">Date: </span><span class="ev">[DATE]</span>
-    </div>
-
-    <h3>Summary</h3>
-    <p>We have completed an initial structured analysis of FY[YEAR] invoice data for [CLIENT NAME] — 18,703 invoice lines totalling £59.2M across 732 suppliers. Six independent data verification checks passed before analysis began. This note summarises the key findings, the realistic savings opportunity, and the recommended next steps.</p>
-
-    <h3>What we found</h3>
-    <ul>
-      <li><b>61% of spend (£36M) is unclassified</b> — no category code in the P2P system. This limits the precision of all other analysis and is the most important issue to resolve first.</li>
-      <li><b>The supplier base is highly fragmented.</b> The top 10 suppliers account for only 25.6% of total spend, versus 60–70% in comparable well-managed operations. Cable ties alone are purchased from 15 different suppliers. Transport from 146.</li>
-      <li><b>480 price records are corrupted</b> (suspected quantity/value data entry errors). Price variance analysis has been formally disabled pending correction — this protects against false conclusions in supplier conversations.</li>
-      <li><b>The true logistics spend is £1.06M</b>, not the £545K visible in the Transport category. £519K of freight charges are embedded in non-logistics supplier invoices. A further £735K was initially flagged but is actually milestone payment terms — identified and excluded on audit.</li>
-      <li><b>72.4% of spend carries zero VAT</b>. In a multi-country operation this may be explainable, but the proportion warrants a formal tax/finance review before any commercial action.</li>
-    </ul>
-
-    <h3>Indicative savings opportunity</h3>
-    <p><b>Important: these are directional estimates based on embedded procurement heuristics, not audited savings. They are hypotheses to be tested, not commitments.</b></p>
-    <ul>
-      <li>Order batching and AP cost reduction: <b>£60K–£120K</b> (high confidence, 0–30 days)</li>
-      <li>Logistics carrier framework: <b>£50K–£130K</b> (medium confidence, 30–90 days)</li>
-      <li>IT &amp; Software consolidation: <b>£0.4M–£0.9M</b> (medium confidence, 30–90 days)</li>
-      <li>Supplier consolidation (post reclassification): <b>£0.8M–£2.1M</b> (structural, 90+ days)</li>
-      <li>VAT compliance review: <b>£0.3M–£1.0M</b> (requires tax team input)</li>
-      <li><b>Total indicative range: £1.4M–£4.0M over 12 months</b></li>
-    </ul>
-    <p>Price variance (H4) is excluded from the above. It will be sized once the data correction exercise is complete.</p>
-
-    <h3>Recommended next steps</h3>
-    <ul>
-      <li><b>Immediate (this week):</b> Begin data correction — fix unit price errors, request ERP cost centre extract, merge supplier name variants. This is a prerequisite for all commercial activity.</li>
-      <li><b>Within 30 days:</b> Agree consolidated delivery schedule with IFS Courier. Implement Amazon Business account for tail spend. Both are process changes requiring no supplier negotiation.</li>
-      <li><b>Within 90 days:</b> IT &amp; Software category review and logistics carrier framework. Parallel VAT compliance review with Finance.</li>
-      <li><b>Structural (90+ days):</b> Electrical supplier consolidation and price variance analysis once data is clean and site dimension is available.</li>
-    </ul>
-
-    <h3>What we need from you</h3>
-    <ul>
-      <li>ERP extract with cost centre / site / project code per invoice line</li>
-      <li>FY[YEAR-1] spend data in the same format (to establish year-on-year baseline)</li>
-      <li>Contract register or preferred supplier list</li>
-      <li>Access to AP team for data correction exercise</li>
-    </ul>
-
-    <div style="margin-top:1.25rem;padding-top:1rem;border-top:0.5px solid var(--border);font-size:11px;color:var(--text3)">
-      <b>Disclaimer:</b> This summary is prepared by PSL on the basis of data provided by [CLIENT NAME]. All saving figures are indicative estimates based on embedded procurement heuristics. They have not been market-tested, verified against contracts, or audited. They should not be reported as confirmed savings, included in business cases, or communicated to suppliers without individual validation. PSL accepts no liability for decisions taken on the basis of this initial analysis without completion of the recommended validation steps.<br><br>
-      Prepared by: PSL Procurement Intelligence · [CLIENT NAME] · FY[YEAR] · Confidential
+  <div class="run-content run-aidan" style="display:none">
+    <div class="card">
+      <table><thead><tr><th>Dataset</th><th>Join key</th><th>Heuristic unlocked</th><th>Confidence uplift</th><th>Effort to obtain</th><th>Priority</th></tr></thead>
+      <tbody>
+        <tr><td><b>ERP cost centre extract</b></td><td>Invoice reference</td><td>H1 → site analysis activated</td><td>+++ High</td><td>1 day</td><td><span class="pill phi">Highest</span></td></tr>
+        <tr><td><b>Corrected invoice data (post AP review)</b></td><td>—</td><td>H4 → price variance re-enabled</td><td>+++ High</td><td>1–2 weeks</td><td><span class="pill phi">Highest</span></td></tr>
+        <tr><td><b>FX normalisation table</b></td><td>Currency + Period</td><td>H1/H4 → cross-region comparison</td><td>++ Medium</td><td>2 hours</td><td><span class="pill phi">High</span></td></tr>
+        <tr><td><b>Prior year spend (FY2023)</b></td><td>Supplier + Category + Period</td><td>H2 → trend direction confirmed</td><td>++ Medium</td><td>1 day</td><td><span class="pill pmd">Medium</span></td></tr>
+        <tr><td><b>Contract register + rate cards</b></td><td>Supplier</td><td>H4 → contract leakage</td><td>+++ High</td><td>2–4 weeks</td><td><span class="pill pmd">Medium</span></td></tr>
+      </tbody></table>
     </div>
   </div>
 </div>
 
-<!-- ======== SPEND CUBE ======== -->
-<div class="page" id="page-spendcube">
-  <div class="ph"><div class="ph-title">Spend cube</div><div class="ph-sub">Supplier × Category × Time. Site / Business Unit dimension missing — must be added from ERP cost centre extract.</div></div>
-  <div class="card">
-    <div class="chart-lbl">Gross spend by category (£)</div>
-    <div class="leg"><div class="leg-i"><div class="leg-sq" style="background:#185FA5"></div>Classified</div><div class="leg-i"><div class="leg-sq" style="background:#E24B4A"></div>Unclassified</div></div>
-    <div class="chart-wrap" style="height:430px"><canvas id="catChart"></canvas></div>
-  </div>
-  <div class="card">
-    <div class="card-title">Top 20 suppliers — ranked by spend</div>
-    <div class="tbl-wrap">
-      <table><thead><tr><th>#</th><th>Supplier</th><th>Gross</th><th>Region</th><th>Heuristic flag</th></tr></thead>
-      <tbody id="suppTable"></tbody></table>
-    </div>
-  </div>
-</div>
+</div><!-- /main -->
+</div><!-- /shell -->
 
-</div><!-- end main -->
-</div><!-- end shell -->
-
-<!-- FOOTER -->
+<!-- ═══════════════════════════════════════════════════
+     FOOTER — Engine version + active run context + disclaimer.
+     Persists on all pages. Updated on run switch.
+     ═══════════════════════════════════════════════════ -->
 <div class="footer">
-  <span><b>Procurement Spend Intelligence Engine v0.4</b> · Analyst-operated · Not self-serve · Prepared by PSL · Client: [CLIENT NAME] · Dataset: [YEAR]</span>
-  <span style="color:var(--coral)"><b>Disclaimer:</b> All saving estimates are indicative and heuristic-based. No savings are guaranteed. No benchmarks are implied unless explicitly stated as assumptions.</span>
+  <span><b>PSIE v0.5</b> · Dataset-agnostic engine · Analyst-operated · Not self-serve · Prepared by PSL</span>
+  <span class="footer-ds" id="footer-ds">Active run: Kingsley Healthcare · FY2024/25 · GBP · 51 sites · 47 entities</span>
+  <span style="color:var(--coral);font-size:11px"><b>Disclaimer:</b> All saving estimates are indicative and heuristic-based. No savings are guaranteed. No benchmarks implied unless explicitly stated as assumptions.</span>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-// ---- NAVIGATION ----
-function showPage(id,el){
+/* ────────────────────────────────────────────────
+   NAVIGATION
+   go() and toggleH() are engine-agnostic.
+   No dataset logic here.
+   ──────────────────────────────────────────────── */
+function go(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   if(el)el.classList.add('active');
 }
 function toggleH(hh){
-  const b=hh.nextElementSibling, c=hh.querySelector('.chev');
-  b.classList.toggle('open'); c.classList.toggle('open');
+  const b=hh.nextElementSibling,c=hh.querySelector('.chev');
+  b.classList.toggle('open');c.classList.toggle('open');
 }
 
-// ---- CHART SETUP ----
+/* ────────────────────────────────────────────────
+   DATASET SWITCHING
+   Switches active run context. Navigation unchanged.
+   Only the data layer behind each page changes.
+   ──────────────────────────────────────────────── */
+const RUN_META = {
+  kingsley: {
+    ctx: 'Kingsley Healthcare · FY2024/25 · GBP · 51 sites · 47 entities · Analyst: [name]',
+    footer: 'Active run: Kingsley Healthcare · FY2024/25 · GBP · 51 sites · 47 entities'
+  },
+  aidan: {
+    ctx: 'Aidan Strain · FY2024 · Multi-currency · No site dimension · Analyst: [name]',
+    footer: 'Active run: Aidan Strain · FY2024 · Multi-currency · No site dimension'
+  }
+};
+
+function switchRun(runId, btn){
+  document.querySelectorAll('.run-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.run-content').forEach(el=>el.style.display='none');
+  document.querySelectorAll('.run-'+runId).forEach(el=>el.style.display='');
+  document.getElementById('ctx-value').textContent = RUN_META[runId].ctx;
+  document.getElementById('footer-ds').textContent = RUN_META[runId].footer;
+}
+
+/* ────────────────────────────────────────────────
+   CHARTS — initialised once, data is run-specific
+   Chart canvases are inside run-content divs,
+   so only the active run's charts are visible.
+   ──────────────────────────────────────────────── */
 const dk=matchMedia('(prefers-color-scheme:dark)').matches;
 const tc=dk?'rgba(255,255,255,.6)':'rgba(0,0,0,.45)';
 const gc=dk?'rgba(255,255,255,.07)':'rgba(0,0,0,.05)';
 
-// Monthly
-new Chart(document.getElementById('monthlyChart'),{
+/* ── Kingsley: Monthly ── */
+new Chart(document.getElementById('kMonthly'),{
+  type:'bar',
+  data:{
+    labels:['Sep24','Oct24','Nov24','Dec24','Jan25','Feb25','Mar25','Apr25','May25','Jun25','Jul25','Aug25','Sep25','Oct25','Nov25','Dec25'],
+    datasets:[{label:'Spend',
+      data:[1087,721402,2489278,344172,3796050,2618326,260588,2052461,2097049,2227598,891010,1493320,5022220,557535,126033,141269],
+      backgroundColor:[1087,721402,2489278,344172,3796050,2618326,260588,2052461,2097049,2227598,891010,1493320,5022220,557535,126033,141269]
+        .map(v=>v===5022220?'#1D9E75':v<400000?'rgba(186,117,23,.5)':'#9FE1CB'),borderRadius:3}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{ticks:{color:tc,font:{size:10}},grid:{display:false},border:{display:false}},
+    y:{ticks:{color:tc,font:{size:10},callback:v=>'£'+(v/1e6).toFixed(1)+'M'},grid:{color:gc},border:{display:false}}}}
+});
+
+/* ── Kingsley: Category ── */
+new Chart(document.getElementById('kCat'),{
+  type:'bar',
+  data:{
+    labels:['Construction Build','Leasehold Rent','Food','Electricity','Agency Staff','Construction FO','Water rates','Insurance','Repair Costs','Cleaning'],
+    datasets:[{data:[7257395,5030797,2871629,1753533,1412424,996400,739517,734231,684271,536066],backgroundColor:'#1D9E75',borderRadius:3}]
+  },
+  options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{ticks:{color:tc,font:{size:10},callback:v=>'£'+(v/1e6).toFixed(1)+'M'},grid:{color:gc},border:{display:false}},
+    y:{ticks:{color:tc,font:{size:10}},grid:{display:false},border:{display:false}}}}
+});
+
+/* ── Kingsley: Entity ── */
+new Chart(document.getElementById('kEntity'),{
+  type:'doughnut',
+  data:{
+    labels:['CRNH Country Retirement','PH2015 Peacock Holdings','AHP Althea Properties','KHBL Kingsley (BL)','KCH Kingsley Care Homes','RHP Regal Properties','KHO Kingsley (Olney)','Other (40 entities)'],
+    datasets:[{data:[3688431,2674330,1919811,1678107,1583710,1516813,1232984,8545212],
+      backgroundColor:['#1D9E75','#5DCAA5','#9FE1CB','#185FA5','#378ADD','#85B7EB','#B5D4F4','#D3D1C7'],borderWidth:0}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
+    plugins:{legend:{position:'bottom',labels:{color:tc,font:{size:10},boxWidth:9,padding:6}}}}
+});
+
+/* ── Kingsley: Spend cube chart ── */
+const kCats=[
+  {n:'Other / Unclassified',s:0,u:false},{n:'Construction Build',s:7257395,u:false},
+  {n:'Leasehold Rent',s:5030797,u:false},{n:'Food',s:2871629,u:false},
+  {n:'Electricity',s:1753533,u:false},{n:'Agency Staff',s:1412424,u:false},
+  {n:'Construction FO',s:996400,u:false},{n:'Water rates',s:739517,u:false},
+  {n:'Insurance',s:734231,u:false},{n:'Repair Costs',s:684271,u:false},
+  {n:'Cleaning Supplies',s:536066,u:false},{n:'Transport',s:530806,u:false},
+];
+new Chart(document.getElementById('kCubeChart'),{
+  type:'bar',
+  data:{labels:kCats.map(c=>c.n),datasets:[{data:kCats.map(c=>c.s),backgroundColor:'#1D9E75',borderRadius:3}]},
+  options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{ticks:{color:tc,font:{size:10},callback:v=>'£'+(v/1e6).toFixed(1)+'M'},grid:{color:gc},border:{display:false}},
+    y:{ticks:{color:tc,font:{size:10}},grid:{display:false},border:{display:false}}}}
+});
+
+/* ── Kingsley: Sites ── */
+const kSites=[
+  {n:'CEN Kingsley House',v:4717693},{n:'QC Queen Charlotte',v:3719133},{n:'EVE Eversley Lodge',v:2964277},
+  {n:'BRC Brackley NH',v:1698958},{n:'OLN Olney Meadows',v:1624162},{n:'KIN King\'s Court',v:916282},
+  {n:'BUC Buckingham Lodge',v:815088},{n:'GG Gower Gardens',v:808169},{n:'SYC Sycamore Heights',v:789158},
+  {n:'WEY Weymouth Manor',v:647758},{n:'BV Broads View',v:555472},{n:'PV Park View NH',v:525873},
+  {n:'OAK Oaklands',v:373523},{n:'HAD Hadleigh NH',v:361569},{n:'HER Heron Lodge',v:345031},
+  {n:'ELI Eliza Palmer',v:324835},{n:'ALL Allonsfield House',v:297285},{n:'TIM Timperley NH',v:272446},
+  {n:'DEP Depperhaugh NH',v:269617},{n:'CAT Catchpole Court',v:268921},
+];
+new Chart(document.getElementById('kSites'),{
+  type:'bar',
+  data:{labels:kSites.map(s=>s.n),datasets:[{data:kSites.map(s=>s.v),backgroundColor:'#1D9E75',borderRadius:3}]},
+  options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{ticks:{color:tc,font:{size:10},callback:v=>'£'+(v/1e6).toFixed(1)+'M'},grid:{color:gc},border:{display:false}},
+    y:{ticks:{color:tc,font:{size:10}},grid:{display:false},border:{display:false}}}}
+});
+
+/* ── Aidan Strain: Monthly ── */
+new Chart(document.getElementById('asMonthly'),{
   type:'bar',
   data:{
     labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
     datasets:[{label:'Gross spend',
       data:[4879970,6102217,6149862,5528187,5269258,4951717,6194340,4105963,3304348,4899864,4249955,3553356],
       backgroundColor:[4879970,6102217,6149862,5528187,5269258,4951717,6194340,4105963,3304348,4899864,4249955,3553356]
-        .map(v=>v===6194340?'#185FA5':v<4200000?'rgba(216,90,48,.65)':'#B5D4F4'),
-      borderRadius:3}]
+        .map(v=>v===6194340?'#185FA5':v<4200000?'rgba(216,90,48,.65)':'#B5D4F4'),borderRadius:3}]
   },
   options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-    scales:{x:{ticks:{color:tc,font:{size:11}},grid:{display:false},border:{display:false}},
-    y:{ticks:{color:tc,font:{size:11},callback:v=>'£'+(v/1e6).toFixed(1)+'M'},grid:{color:gc},border:{display:false}}}}
+    scales:{x:{ticks:{color:tc,font:{size:10}},grid:{display:false},border:{display:false}},
+    y:{ticks:{color:tc,font:{size:10},callback:v=>'£'+(v/1e6).toFixed(1)+'M'},grid:{color:gc},border:{display:false}}}}
 });
 
-// Region
-new Chart(document.getElementById('regionChart'),{
-  type:'doughnut',
-  data:{labels:['UK/Ireland £21.4M','Unknown £17.5M','Benelux/DACH £10.7M','Spain/Italy £5.1M','Nordic/Baltic £4.5M'],
-    datasets:[{data:[21424515,17531382,10677272,5077162,4478706],backgroundColor:['#185FA5','#B5D4F4','#1D9E75','#9FE1CB','#5DCAA5'],borderWidth:0}]},
-  options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
-    plugins:{legend:{position:'bottom',labels:{color:tc,font:{size:11},boxWidth:10,padding:7}}}}
-});
-
-// Radar
-new Chart(document.getElementById('radarChart'),{
-  type:'radar',
-  data:{labels:['Site analysis','YoY trend','Consolidation','Price variance','Batching','Logistics'],
-    datasets:[
-      {label:'Impact potential',data:[5,3,5,4,3,3],borderColor:'#185FA5',backgroundColor:'rgba(24,95,165,.1)',pointBackgroundColor:'#185FA5',borderWidth:1.5},
-      {label:'Data readiness',data:[1,2,4,1,5,4],borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,.07)',pointBackgroundColor:'#1D9E75',borderWidth:1.5,borderDash:[4,3]}
-    ]},
-  options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{position:'bottom',labels:{color:tc,font:{size:11},boxWidth:10,padding:7}}},
-    scales:{r:{ticks:{color:tc,font:{size:9},stepSize:1},grid:{color:gc},pointLabels:{color:tc,font:{size:10}},min:0,max:5}}}
-});
-
-// Category
-const cats=[
-  {n:'Other / Unclassified',s:36190738,u:true},
-  {n:'IT & Software',s:9144281,u:false},
-  {n:'Subcontract Services',s:5231562,u:false},
-  {n:'Electrical Equipment',s:1927696,u:false},
-  {n:'Plant & Vehicle Hire',s:1522898,u:false},
-  {n:'Cables & Wiring',s:1514956,u:false},
-  {n:'Steel & Fixings',s:1213660,u:false},
-  {n:'Design & Print',s:587866,u:false},
-  {n:'Transport & Logistics',s:545109,u:false},
-  {n:'Pipework & Fittings',s:476741,u:false},
-  {n:'Professional Services',s:387902,u:false},
-  {n:'Containers & Storage',s:308941,u:false},
-  {n:'Pumps & Fluid Systems',s:86232,u:false},
-  {n:'Interior & Fit-out',s:50455,u:false},
+/* ── Aidan Strain: Category ── */
+const asCats=[
+  {n:'Other / Unclassified',s:36190738,u:true},{n:'IT & Software',s:9144281,u:false},
+  {n:'Subcontract Services',s:5231562,u:false},{n:'Electrical Equipment',s:1927696,u:false},
+  {n:'Plant & Vehicle Hire',s:1522898,u:false},{n:'Cables & Wiring',s:1514956,u:false},
+  {n:'Steel & Fixings',s:1213660,u:false},{n:'Design & Print',s:587866,u:false},
+  {n:'Transport & Logistics',s:545109,u:false},{n:'Pipework & Fittings',s:476741,u:false},
 ];
-new Chart(document.getElementById('catChart'),{
+new Chart(document.getElementById('asCat'),{
   type:'bar',
-  data:{labels:cats.map(c=>c.n),
-    datasets:[{data:cats.map(c=>c.s),backgroundColor:cats.map(c=>c.u?'#E24B4A':'#185FA5'),borderRadius:3}]},
+  data:{labels:asCats.map(c=>c.n),datasets:[{data:asCats.map(c=>c.s),backgroundColor:asCats.map(c=>c.u?'#E24B4A':'#185FA5'),borderRadius:3}]},
   options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-    scales:{x:{ticks:{color:tc,font:{size:11},callback:v=>'£'+(v/1e6).toFixed(1)+'M'},grid:{color:gc},border:{display:false}},
-    y:{ticks:{color:tc,font:{size:11}},grid:{display:false},border:{display:false}}}}
+    scales:{x:{ticks:{color:tc,font:{size:10},callback:v=>'£'+(v/1e6).toFixed(1)+'M'},grid:{color:gc},border:{display:false}},
+    y:{ticks:{color:tc,font:{size:10}},grid:{display:false},border:{display:false}}}}
 });
 
-// Supplier table
-const supps=[
-  {n:'PSI Global Group Ltd',s:3176886,r:'UK/Ireland',f:'H3: Consolidation candidate'},
-  {n:'Down to Earth Electrical LTD',s:2792083,r:'UK/Ireland',f:'H3: Electrical anchor'},
-  {n:'MONTAJES ELECTRICOS ANDREY SL',s:1461809,r:'Spain/Italy',f:'H1: Site-specific — validate'},
-  {n:'ELECTROGESTION Y CONTROLS J.G',s:1400731,r:'Spain/Italy',f:'H4: Price variance — disabled'},
-  {n:'Karl Steiger GmbH',s:1183217,r:'Benelux/DACH',f:'H1: Cross-region pricing'},
-  {n:'Anord Mardix (UK) Ltd',s:1132873,r:'UK/Ireland',f:'H3: Consolidate with Electrical?'},
-  {n:'ELECTRICAL & PUMP SERVICES LTD',s:1081979,r:'UK/Ireland',f:'H3: Consolidate with Anord?'},
-  {n:'LANDGUARD ENGINEERING',s:1012968,r:'UK/Ireland',f:'H3: Subcontract review'},
-  {n:'CARNVIEW CONSTRUCTION',s:1008286,r:'UK/Ireland',f:'H3: Subcontract review'},
-  {n:'ARK INFINITY SOLUTIONS',s:926344,r:'Unknown',f:'H2: Validate entity/region'},
-  {n:'ELAND CABLES (Euro)',s:906419,r:'Benelux/DACH',f:'H3: Consolidate with Cables?'},
-  {n:'PAX Bouw-en Industrieservice',s:892978,r:'Benelux/DACH',f:'H3: Regional supplier'},
-  {n:'UAB Eurodetra',s:886576,r:'Nordic/Baltic',f:'H1: Site mapping needed'},
-  {n:'EXCISE ELECTRICAL LTD',s:848600,r:'UK/Ireland',f:'H3: Electrical consolidation'},
-  {n:'ATM Fabrications Ltd',s:841928,r:'UK/Ireland',f:'H4: Disabled — data first'},
-  {n:'Captain Projects BV',s:785368,r:'Benelux/DACH',f:'H6: £88K embedded logistics'},
-  {n:'Krampitz Container Systems GmbH',s:760771,r:'Benelux/DACH',f:'H6: Transport in invoices'},
-  {n:'D&S Process Solutions BV',s:709905,r:'Benelux/DACH',f:'H1: Cross-region'},
-  {n:'SAS Transition OU',s:688089,r:'Nordic/Baltic',f:'H1: Site mapping needed'},
-  {n:'Precision Switchgear & Controls',s:664567,r:'UK/Ireland',f:'H3: Electrical consolidation'},
-];
-const st=document.getElementById('suppTable');
-supps.forEach((s,i)=>{
-  st.innerHTML+=`<tr>
-    <td style="color:var(--text3)">${i+1}</td>
-    <td style="font-size:12px">${s.n}</td>
-    <td style="font-weight:700">£${(s.s/1e6).toFixed(2)}M</td>
-    <td style="font-size:11px;color:var(--text2)">${s.r}</td>
-    <td style="font-size:11px;color:var(--text2)">${s.f}</td>
-  </tr>`;
+/* ── Aidan Strain: Cube chart ── */
+new Chart(document.getElementById('asCubeChart'),{
+  type:'bar',
+  data:{labels:asCats.map(c=>c.n),datasets:[{data:asCats.map(c=>c.s),backgroundColor:asCats.map(c=>c.u?'#E24B4A':'#185FA5'),borderRadius:3}]},
+  options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{ticks:{color:tc,font:{size:10},callback:v=>'£'+(v/1e6).toFixed(1)+'M'},grid:{color:gc},border:{display:false}},
+    y:{ticks:{color:tc,font:{size:10}},grid:{display:false},border:{display:false}}}}
 });
 
-// Logistics table
-const logLines=[
-  {s:'Elinex Power Solutions B.V.',d:'Milestone 3 - 30.09% after delivery on site - Global',g:245204,dt:'2024-01-30',k:'delivery',note:'⚠ FALSE POSITIVE: milestone payment term, not freight — excluded'},
-  {s:'KOHLER EMEA / Rehlko',d:'AR/Acknowledgement of Receipt of order N AV143263',g:174610,dt:'2024-02-15',k:'delivery',note:'⚠ FALSE POSITIVE: receipt acknowledgement, not freight — excluded'},
-  {s:'CTC TANKBOUW BVBA',d:'10% at delivery 30d netto (×2 invoices)',g:287000,dt:'2024-02-08',k:'delivery',note:'⚠ FALSE POSITIVE: payment term — excluded'},
-  {s:'Captain Projects BV',d:'Installation & deinstallation Datahall setup + transport',g:80575,dt:'2024-05-08',k:'transport',note:'Review: project service charge — may not be separable freight'},
-  {s:'Advanced Engineering Group',d:'Cummins - Nugteren Transport - Genset Test',g:70000,dt:'2024-05-07',k:'transport',note:'Review: specialist equipment transport — likely genuine'},
-  {s:'Aggreko Iberia S.A.',d:'Material Alquilado: Importe primeras 4 semanas transport',g:67358,dt:'2024-02-09',k:'transport',note:'Genuine: rental delivery charge'},
-  {s:'canavan interiors',d:'Payment for Delivery of Goods as per terms',g:63395,dt:'2024-03-20',k:'delivery',note:'Genuine: delivery charge'},
-  {s:'ABB B.V.',d:'PROJECT Design, manufacturing and delivery PRO EUR',g:57596,dt:'2024-04-09',k:'delivery',note:'Review: bundled in manufacturing cost?'},
-  {s:'KOHLER EMEA / Rehlko',d:'AR/Acknowledgement of Receipt — Notre BL',g:28168,dt:'2024-08-23',k:'delivery',note:'⚠ FALSE POSITIVE: receipt acknowledgement — excluded'},
-  {s:'Gessler GmbH',d:'Primus PQ5 - ceiling mounting + Q1 lens + delivery',g:11900,dt:'2024-08-13',k:'delivery',note:'Genuine: product delivery charge'},
-  {s:'Captain Projects BV',d:'Installation & deinstallation + transport of equipment',g:7875,dt:'2024-04-16',k:'transport',note:'Review: service bundle'},
-  {s:'Aggreko Iberia S.A.',d:'Extension semana transport 10/07/24-16/07/24',g:6454,dt:'2024-10-07',k:'transport',note:'Genuine: rental delivery'},
-  {s:'MJ WILSON GROUP LTD',d:'PNP/PLC low voltage switching — carriage',g:5938,dt:'2024-11-20',k:'carriage',note:'Genuine: carriage charge'},
-  {s:'S. KORONKA (Manufacturing) LTD',d:'Access Ladder c/w safety hoops — transport',g:5110,dt:'2024-02-27',k:'transport',note:'Genuine: delivery of fabricated item'},
-  {s:'R &M Europe BV',d:'M12 Square Plate Washer — DELIVERY 7-10 DAYS',g:2519,dt:'2024-11-18',k:'delivery',note:'Genuine: delivery surcharge'},
-  {s:'Gessler GmbH',d:'Primus PX5 - wall bracket Lieferdatum 07.08.2024',g:2499,dt:'2024-08-13',k:'delivery',note:'Review: German "Lieferdatum" = delivery date in description'},
-  {s:'Collé Rental & Sales',d:'Rental objects transport assignment 00471749',g:2400,dt:'2024-09-04',k:'transport',note:'Genuine: rental delivery'},
-  {s:'Krampitz Container Systems',d:'Transport costs combined with delivery',g:2112,dt:'2024-12-05',k:'transport',note:'Genuine: container delivery'},
-  {s:'Kabeltec GmbH',d:'AA Carriage',g:2098,dt:'2024-04-29',k:'carriage',note:'Genuine: carriage charge'},
-  {s:'END-Armaturen GmbH',d:'Ball valve — customs tariff + delivery',g:1981,dt:'2024-05-23',k:'delivery',note:'Genuine: delivery element of order'},
-  {s:'ABB B.V.',d:'PROJECT CIP transport Batteries to Ireland',g:1936,dt:'2024-04-09',k:'transport',note:'Genuine: specialist freight'},
-  {s:'Powerpoint Engineering Ltd',d:'Insulating matting IEC61111 — delivery',g:1908,dt:'2024-09-09',k:'delivery',note:'Genuine: delivery charge'},
-  {s:'R &M Europe BV',d:'ML2X25MM H.T Setbolt BZP DELIVERY 7-10 DAYS',g:1895,dt:'2024-07-25',k:'delivery',note:'Genuine: delivery surcharge'},
-  {s:'Elinex Power Solutions B.V.',d:'100% Storage 12 weeks, Handling fee, Transport',g:1856,dt:'2024-01-18',k:'transport',note:'Genuine: logistics/storage charge'},
-  {s:'Roxtec BV',d:'RM00310121000 — freight included',g:1720,dt:'2024-03-14',k:'freight',note:'Genuine: freight element'},
-];
-const lt=document.getElementById('logisticsTable');
-logLines.forEach((l,i)=>{
-  const isFP=l.note.includes('FALSE POSITIVE');
-  lt.innerHTML+=`<tr style="${isFP?'opacity:0.5;text-decoration:line-through;':''}" >
-    <td style="color:var(--text3)">${i+1}</td>
-    <td style="font-size:11px">${l.s}</td>
-    <td style="font-size:11px">${l.d.substring(0,55)}${l.d.length>55?'…':''}</td>
-    <td style="font-weight:700">£${l.g.toLocaleString()}</td>
-    <td style="font-size:11px;color:var(--text3)">${l.dt}</td>
-    <td><span class="pill pgr" style="font-size:10px">${l.k}</span></td>
-    <td style="font-size:10px;color:${isFP?'var(--red)':'var(--text2)'};">${l.note}</td>
-  </tr>`;
+/* ── Aidan Strain: VAT ── */
+new Chart(document.getElementById('asVat'),{
+  type:'doughnut',
+  data:{
+    labels:['Zero VAT £42.9M (72.4%)','With VAT £16.3M (27.6%)'],
+    datasets:[{data:[42872679,16330392],backgroundColor:['#E24B4A','#9FE1CB'],borderWidth:0}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+    plugins:{legend:{position:'bottom',labels:{color:tc,font:{size:11},boxWidth:10,padding:8}}}}
 });
 </script>
 </body>
