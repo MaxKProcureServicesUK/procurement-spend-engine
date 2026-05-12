@@ -21,7 +21,7 @@ function selectDS(id) {
 }
 
 const AP_DATA = {"hours":[{"h":0,"n":5},{"h":1,"n":6},{"h":2,"n":0},{"h":3,"n":65},{"h":4,"n":99},{"h":5,"n":162},{"h":6,"n":97},{"h":7,"n":317},{"h":8,"n":3746},{"h":9,"n":2135},{"h":10,"n":1750},{"h":11,"n":1130},{"h":12,"n":1011},{"h":13,"n":868},{"h":14,"n":1320},{"h":15,"n":822},{"h":16,"n":922},{"h":17,"n":158},{"h":18,"n":30},{"h":19,"n":38},{"h":20,"n":26},{"h":21,"n":20},{"h":22,"n":4},{"h":23,"n":4}],"dow":[{"d":"Mon","n":3127},{"d":"Tue","n":3032},{"d":"Wed","n":3236},{"d":"Thu","n":2750},{"d":"Fri","n":2568},{"d":"Sat","n":22},{"d":"Sun","n":0}],"monthly_lines":{"2024":{"Jan":1605,"Feb":1545,"Mar":1779,"Apr":1632,"May":1699,"Jun":1652,"Jul":1986,"Aug":1364,"Sep":1269,"Oct":1428,"Nov":1433},"2025":{"Jan":1535,"Feb":1616,"Mar":1830,"Apr":1810,"May":1811,"Jun":1756,"Jul":1331,"Aug":851,"Sep":973,"Oct":930,"Nov":292}},"monthly_credits":{"2024":{"Jan":4,"Feb":7,"Mar":6,"Apr":5,"May":2,"Jun":3,"Jul":1,"Aug":4,"Sep":1,"Oct":1,"Nov":1},"2025":{"Jan":0,"Feb":1,"Mar":5,"Apr":3,"May":7,"Jun":4,"Jul":3,"Aug":0,"Sep":1,"Oct":1,"Nov":3}},"zero_vat_pct25":15.7,"zero_vat_pct24":20.3,"credits25_count":28,"credits25_val":30208,"credits24_count":35,"credits24_val":292572,"multi_line_refs":2723,"single_line_refs":5332,"tx_bands":{"labels":["<\u00a31K","\u00a31K\u2013\u00a310K","\u00a310K\u2013\u00a350K","\u00a350K\u2013\u00a3200K",">\u00a3200K"],"v24":[13137,3064,707,224,21],"v25":[11583,2267,541,173,33]},"peak_hour":8,"peak_hour_pct":25.4};
-const CARBON_DATA = {"total24":12245,"total25":12781,"change_pct":4.4,"by_sector":[{"sector":"Electrical & Power Systems","ei":0.18,"v24":17888997,"v25":9890698,"co2_24":3220.0,"co2_25":1780.3},{"sector":"Construction & Civil Works","ei":0.28,"v24":8457017,"v25":8831174,"co2_24":2368.0,"co2_25":2472.7},{"sector":"Mechanical Fabrication & Pipework","ei":0.35,"v24":5202396,"v25":9652906,"co2_24":1820.8,"co2_25":3378.5},{"sector":"Equipment Hire & Site Services","ei":0.55,"v24":2009983,"v25":4113700,"co2_24":1105.5,"co2_25":2262.5},{"sector":"Cables, Containment & Electrical Materials","ei":0.22,"v24":3516536,"v25":1797511,"co2_24":773.6,"co2_25":395.5},{"sector":"Staffing & Workforce Supply","ei":0.08,"v24":3202574,"v25":2171375,"co2_24":256.2,"co2_25":173.7},{"sector":"Water, Cooling & Fluid Systems","ei":0.2,"v24":1243063,"v25":1606333,"co2_24":248.6,"co2_25":321.3},{"sector":"Professional Services & Consulting","ei":0.05,"v24":1536507,"v25":232050,"co2_24":76.8,"co2_25":11.6},{"sector":"Insurance & Financial Services","ei":0.02,"v24":648347,"v25":354237,"co2_24":13.0,"co2_25":7.1},{"sector":"Tools, Hardware & Site Materials","ei":0.3,"v24":371981,"v25":302159,"co2_24":111.6,"co2_25":90.6},{"sector":"Unclassified","ei":0.2,"v24":11256433,"v25":9437574,"co2_24":2251.3,"co2_25":1887.5}],"method":"Spend-based EEIO proxy (DEFRA methodology). Directional signal only. Not a verified carbon audit.","scope":"Scope 3 Category 1 \u2014 Purchased Goods and Services"};
+const CARBON_DATA = {"total24":3972.6,"total25":3972.6,"change_pct":0,"by_sector":[{"sector":"Facility & Property Management","ei":0.16,"v24":12416393,"v25":12416393,"co2_24":1942.9,"co2_25":1942.9},{"sector":"Corporate & Admin Support","ei":0.13,"v24":8563774,"v25":8563774,"co2_24":1093.0,"co2_25":1093.0},{"sector":"Energy & Utilities","ei":0.28,"v24":1455924,"v25":1455924,"co2_24":407.9,"co2_25":407.9},{"sector":"ICT","ei":0.13,"v24":1210980,"v25":1210980,"co2_24":159.9,"co2_25":159.9},{"sector":"Banking Finance & Insurance","ei":0.02,"v24":566827,"v25":566827,"co2_24":11.5,"co2_25":11.5},{"sector":"Logistics & Distribution","ei":0.71,"v24":492889,"v25":492889,"co2_24":349.1,"co2_25":349.1},{"sector":"Other","ei":0.02,"v24":96376,"v25":96376,"co2_24":8.3,"co2_25":8.3}],"method":"Spend-based EEIO proxy (DEFRA methodology). Directional signal only.","scope":"Scope 3 Category 1 — Purchased Goods and Services"};
 
 /* ── AP CHARTS ── */
 function initAP() {
@@ -29,47 +29,72 @@ function initAP() {
   var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov'];
   var gc = 'rgba(0,0,0,.04)';
   var fM = function(v) { return v>=1e6?'£'+(v/1e6).toFixed(2)+'M':v>=1000?'£'+(v/1e3).toFixed(0)+'K':'£'+v; };
+  var apFrac = (typeof getActiveFraction === 'function') ? getActiveFraction() : 1;
+  var activeSites = (typeof getActiveSiteData === 'function') ? getActiveSiteData() : [];
+  var activeLines = activeSites.reduce(function(a,s){return a+s.lines;},0) || Math.round(AP_DATA.peak_hour_pct/100 * 14735 * 4);
+
+  // Scale transaction counts by fraction; keep percentages/ratios unchanged
+  var scaledMultiPct = Math.round(AP.multi_line_refs/(AP.multi_line_refs+AP.single_line_refs)*100);
+
   var kdata = [
-    {l:'Transactions 2025', v:'14,735', s:'vs 17,392 Jan–Nov 2024', d:'−15.3%', c:'dn'},
-    {l:'Peak processing hour', v:'08:00', s:AP.peak_hour_pct+'% of all 2025 lines', d:'Batch processing signal', c:'neu'},
-    {l:'Multi-line order refs', v:AP.multi_line_refs.toLocaleString(), s:'Orders with 2+ lines', d:'Structured procurement', c:'neu'},
-    {l:'Credit notes 2025', v:AP.credits25_count.toString(), s:'£'+Math.round(AP.credits25_val/1000)+'K value', d:'−90% vs 2024 — positive', c:'up'},
-    {l:'Zero-VAT lines 2025', v:AP.zero_vat_pct25+'%', s:'International procurement', d:'vs '+AP.zero_vat_pct24+'% in 2024', c:'neu'},
-    {l:'Weekend activity', v:'22 lines', s:'Saturday only', d:'Mon–Fri operation', c:'up'},
+    {l:'Invoice lines (scaled)',    v:Math.round(activeLines).toLocaleString(),  s:'active sites', d:'based on site selection', c:'neu'},
+    {l:'Peak processing hour',      v:'08:00',                   s:AP.peak_hour_pct+'% of lines',     d:'Batch processing signal',  c:'neu'},
+    {l:'Multi-line orders',         v:scaledMultiPct+'%',        s:'of order refs have 2+ lines',     d:'Structured procurement',   c:'neu'},
+    {l:'Credit notes (portfolio)',  v:AP.credits25_count.toString(), s:'£'+Math.round(AP.credits25_val/1000)+'K value', d:'−90% vs 2024 — positive', c:'up'},
+    {l:'Zero-VAT lines',            v:AP.zero_vat_pct25+'%',     s:'International procurement',       d:'vs '+AP.zero_vat_pct24+'% in 2024', c:'neu'},
+    {l:'Weekend activity',          v:'22 lines',                s:'Saturday only',                   d:'Mon–Fri operation',        c:'up'},
   ];
   var kr = document.getElementById('krow-ap');
-  if (kr) kdata.forEach(function(k) { kr.innerHTML += '<div class="kpi '+k.c+'"><div class="kl">'+k.l+'</div><div class="kv">'+k.v+'</div><div class="ks">'+k.s+'</div><div class="kd">'+k.d+'</div></div>'; });
+  if (kr) { kr.innerHTML = ''; kdata.forEach(function(k) { kr.innerHTML += '<div class="kpi '+k.c+'"><div class="kl">'+k.l+'</div><div class="kv">'+k.v+'</div><div class="ks">'+k.s+'</div><div class="kd">'+k.d+'</div></div>'; }); }
 
-  new Chart(document.getElementById('c-ap-monthly'), {type:'bar',data:{labels:MONTHS,datasets:[{label:'2024',data:MONTHS.map(function(m){return AP.monthly_lines['2024'][m]||0;}),backgroundColor:'#1A3A5C55',borderRadius:3,borderSkipped:false},{label:'2025',data:MONTHS.map(function(m){return AP.monthly_lines['2025'][m]||0;}),backgroundColor:'#18BE6588',borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:9,padding:10}}},scales:{x:{grid:{display:false},border:{display:false}},y:{grid:{color:gc},border:{display:false}}}}});
+  // Scale hourly and DOW counts by fraction
+  var scaledHours = AP.hours.map(function(h){return {h:h.h, n:Math.round(h.n*apFrac)};});
+  var scaledDow   = AP.dow.map(function(d){return {d:d.d,  n:Math.round(d.n*apFrac)};});
+  var scaledBandsV24 = AP.tx_bands.v24.map(function(v){return Math.round(v*apFrac);});
+  var scaledBandsV25 = AP.tx_bands.v25.map(function(v){return Math.round(v*apFrac);});
 
-  new Chart(document.getElementById('c-ap-credits'), {type:'bar',data:{labels:MONTHS,datasets:[{label:'2024',data:MONTHS.map(function(m){return AP.monthly_credits['2024'][m]||0;}),backgroundColor:'#991B1B88',borderRadius:3,borderSkipped:false},{label:'2025',data:MONTHS.map(function(m){return AP.monthly_credits['2025'][m]||0;}),backgroundColor:'#B4530988',borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:9,padding:10}}},scales:{x:{grid:{display:false},border:{display:false}},y:{ticks:{stepSize:1},grid:{color:gc},border:{display:false}}}}});
+  // Scale monthly line counts
+  var scaledMonthly24 = MONTHS.map(function(m){return Math.round((AP.monthly_lines['2024'][m]||0)*apFrac);});
+  var scaledMonthly25 = MONTHS.map(function(m){return Math.round((AP.monthly_lines['2025'][m]||0)*apFrac);});
+  var scaledCredits24 = MONTHS.map(function(m){return Math.round((AP.monthly_credits['2024'][m]||0)*apFrac);});
+  var scaledCredits25 = MONTHS.map(function(m){return Math.round((AP.monthly_credits['2025'][m]||0)*apFrac);});
 
-  new Chart(document.getElementById('c-ap-hours'), {type:'bar',data:{labels:AP.hours.map(function(h){return h.h+':00';}),datasets:[{data:AP.hours.map(function(h){return h.n;}),backgroundColor:AP.hours.map(function(h){return h.h===8?'#B4530999':'#1A3A5C55';}),borderRadius:2,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.raw.toLocaleString()+' lines';}}}},scales:{x:{ticks:{font:{size:8},maxRotation:0},grid:{display:false},border:{display:false}},y:{grid:{color:gc},border:{display:false}}}}});
+  new Chart(document.getElementById('c-ap-monthly'), {type:'bar',data:{labels:MONTHS,datasets:[{label:'2024 (scaled)',data:scaledMonthly24,backgroundColor:'#1A3A5C55',borderRadius:3,borderSkipped:false},{label:'2025 (scaled)',data:scaledMonthly25,backgroundColor:'#18BE6588',borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:9,padding:10}}},scales:{x:{grid:{display:false},border:{display:false}},y:{grid:{color:gc},border:{display:false}}}}});
 
-  new Chart(document.getElementById('c-ap-dow'), {type:'bar',data:{labels:AP.dow.map(function(d){return d.d;}),datasets:[{data:AP.dow.map(function(d){return d.n;}),backgroundColor:AP.dow.map(function(d){return (d.d==='Sat'||d.d==='Sun')?'#B4530966':'#18BE6588';}),borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.raw.toLocaleString()+' lines';}}}},scales:{x:{grid:{display:false},border:{display:false}},y:{grid:{color:gc},border:{display:false}}}}});
+  new Chart(document.getElementById('c-ap-credits'), {type:'bar',data:{labels:MONTHS,datasets:[{label:'2024',data:scaledCredits24,backgroundColor:'#991B1B88',borderRadius:3,borderSkipped:false},{label:'2025',data:scaledCredits25,backgroundColor:'#B4530988',borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:9,padding:10}}},scales:{x:{grid:{display:false},border:{display:false}},y:{ticks:{stepSize:1},grid:{color:gc},border:{display:false}}}}});
 
-  new Chart(document.getElementById('c-ap-bands'), {type:'bar',data:{labels:AP.tx_bands.labels,datasets:[{label:'2024',data:AP.tx_bands.v24,backgroundColor:'#1A3A5C66',borderRadius:3},{label:'2025',data:AP.tx_bands.v25,backgroundColor:'#18BE6588',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:9,padding:10}}},scales:{x:{grid:{display:false},border:{display:false}},y:{grid:{color:gc},border:{display:false}}}}});
+  new Chart(document.getElementById('c-ap-hours'), {type:'bar',data:{labels:scaledHours.map(function(h){return h.h+':00';}),datasets:[{data:scaledHours.map(function(h){return h.n;}),backgroundColor:scaledHours.map(function(h){return h.h===8?'#B4530999':'#1A3A5C55';}),borderRadius:2,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.raw.toLocaleString()+' lines (scaled)';}}}},scales:{x:{ticks:{font:{size:8},maxRotation:0},grid:{display:false},border:{display:false}},y:{grid:{color:gc},border:{display:false}}}}});
+
+  new Chart(document.getElementById('c-ap-dow'), {type:'bar',data:{labels:scaledDow.map(function(d){return d.d;}),datasets:[{data:scaledDow.map(function(d){return d.n;}),backgroundColor:scaledDow.map(function(d){return (d.d==='Sat'||d.d==='Sun')?'#B4530966':'#18BE6588';}),borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.raw.toLocaleString()+' lines (scaled)';}}}},scales:{x:{grid:{display:false},border:{display:false}},y:{grid:{color:gc},border:{display:false}}}}});
+
+  new Chart(document.getElementById('c-ap-bands'), {type:'bar',data:{labels:AP.tx_bands.labels,datasets:[{label:'2024 (scaled)',data:scaledBandsV24,backgroundColor:'#1A3A5C66',borderRadius:3},{label:'2025 (scaled)',data:scaledBandsV25,backgroundColor:'#18BE6588',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:9,padding:10}}},scales:{x:{grid:{display:false},border:{display:false}},y:{grid:{color:gc},border:{display:false}}}}});
 
   var apSigs = [
-    {col:'var(--up)',t:'Credit value reduced 90%',b:'28 credits (£30K) in 2025 vs 35 (£293K) in 2024. Fewer disputes, fewer returns, improving supplier accuracy. Positive operational signal.'},
-    {col:'var(--amber)',t:'Peak processing at 08:00 — '+AP.peak_hour_pct+'% of daily volume',b:'Consistent with automated batch processing or systematic morning workflow. Processing is concentrated, not distributed — a structural characteristic, not a control risk.'},
-    {col:'var(--navy2)',t:'Zero-VAT declining (positive)',b:'Zero-VAT lines fell from '+AP.zero_vat_pct24+'% to '+AP.zero_vat_pct25+'%. May reflect a geographic shift in supplier mix or improved VAT coding. Either is a positive AP signal.'},
-    {col:'var(--up)',t:'Weekend activity near-zero',b:'Only 22 Saturday lines in 2025 (0.15%). Clean Mon–Fri operating pattern — no evidence of out-of-hours anomalies.'},
-    {col:'var(--navy2)',t:'Transaction shift toward higher-value lines',b:'Lines below £1K fell 11.8%. Lines above £200K grew 57%. Consistent with milestone billing replacing high-frequency materials procurement.'},
+    {col:'var(--up)',    t:'Credit value reduced 90% (portfolio-wide)',      b:'28 credits (£30K) in 2025 vs 35 (£293K) in 2024. Fewer billing disputes, fewer returns, improving supplier accuracy.'},
+    {col:'var(--amber)', t:'Peak processing at 08:00 — '+AP.peak_hour_pct+'% of daily volume', b:'Consistent with automated batch processing. Processing is concentrated — a structural characteristic, not a control risk.'},
+    {col:'var(--navy2)', t:'Zero-VAT declining (positive)',                  b:'Zero-VAT lines fell from '+AP.zero_vat_pct24+'% to '+AP.zero_vat_pct25+'%. May reflect improved VAT coding discipline.'},
+    {col:'var(--up)',    t:'Weekend activity near-zero',                     b:'Only 22 Saturday lines (portfolio). Clean Mon–Fri operating pattern.'},
+    {col:'var(--navy2)', t:'Transaction value shift — fewer small lines',    b:'Lines below £1K down vs prior period. Consistent with more structured procurement approach.'},
   ];
   var sl = document.getElementById('ap-signals-list');
-  if (sl) apSigs.forEach(function(s) { sl.innerHTML += '<div style="display:flex;gap:10px;padding:.625rem 0;border-bottom:1px solid var(--rule);align-items:flex-start"><div style="width:7px;height:7px;border-radius:50%;background:'+s.col+';flex-shrink:0;margin-top:4px"></div><div><div style="font-weight:600;font-size:12px;margin-bottom:2px">'+s.t+'</div><div style="font-size:11.5px;color:var(--ink3);line-height:1.6">'+s.b+'</div></div></div>'; });
+  if (sl) { sl.innerHTML = ''; apSigs.forEach(function(s) { sl.innerHTML += '<div style="display:flex;gap:10px;padding:.625rem 0;border-bottom:1px solid var(--rule);align-items:flex-start"><div style="width:7px;height:7px;border-radius:50%;background:'+s.col+';flex-shrink:0;margin-top:4px"></div><div><div style="font-weight:600;font-size:12px;margin-bottom:2px">'+s.t+'</div><div style="font-size:11.5px;color:var(--ink3);line-height:1.6">'+s.b+'</div></div></div>'; }); }
 }
 
 /* ── CARBON CHARTS ── */
 function initCarbon() {
   var C2 = CARBON_DATA;
-  var cb = C2.by_sector;
+  var frac2 = getActiveFraction();
+  var cb = (C2.by_sector||[]).map(function(s){
+    return Object.assign({},s,{
+      co2_24: +(s.co2_24 * frac2).toFixed(1),
+      co2_25: +(s.co2_25 * frac2).toFixed(1)
+    });
+  });
   var classified = cb.filter(function(s){return s.sector!=='Unclassified';});
   var sorted = classified.slice().sort(function(a,b){return b.co2_25-a.co2_25;});
-  var t_co2_25 = Math.round(C2.total25);
-  var t_co2_24 = Math.round(C2.total24);
-  var t25 = 47301848;
+  var t_co2_25 = Math.round(C2.total25 * frac2) || 1;  // guard /0
+  var t_co2_24 = Math.round(C2.total24 * frac2) || 1;
+  var t25_spend = getActiveTotal() || 1;
   var gc = 'rgba(0,0,0,.04)';
   var PAL = ['#1A3A5C','#18BE65','#B45309','#7C3AED','#0F766E','#991B1B','#C2410C','#1D4ED8','#065F46','#92400E'];
 
@@ -80,14 +105,14 @@ function initCarbon() {
     {l:'HVO100 signal', v:'ODN Oil BV', s:'Sustainable fuel — new 2025', d:'>89% CO₂e reduction vs diesel', c:'up'},
   ];
   var kr = document.getElementById('krow-carbon');
-  if (kr) kdata.forEach(function(k) {
+  if (kr) { kr.innerHTML = ''; kdata.forEach(function(k) {
     var cls = k.c === 'teal' ? 'border-top:3px solid var(--teal)' : '';
     kr.innerHTML += '<div class="kpi '+k.c+'" style="'+cls+'"><div class="kl">'+k.l+'</div><div class="kv">'+k.v+'</div><div class="ks">'+k.s+'</div><div class="kd">'+k.d+'</div></div>';
-  });
+  }); }
 
   new Chart(document.getElementById('c-co2-sec'), {type:'bar',data:{labels:sorted.map(function(s){return s.sector.split(' ').slice(0,2).join(' ');}),datasets:[{data:sorted.map(function(s){return s.co2_25;}),backgroundColor:PAL,borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.raw.toFixed(0)+' tCO₂e (est.)';}}}},scales:{x:{ticks:{callback:function(v){return v+'t';}},grid:{color:gc},border:{display:false}},y:{grid:{display:false},border:{display:false},ticks:{font:{size:9}}}}}});
 
-  new Chart(document.getElementById('c-co2-div'), {type:'bar',data:{labels:classified.map(function(s){return s.sector.split(' ').slice(0,2).join(' ');}),datasets:[{label:'Spend %',data:classified.map(function(s){return +(s.v25/t25*100).toFixed(1);}),backgroundColor:'#1A3A5C99',borderRadius:3},{label:'Carbon % (est.)',data:classified.map(function(s){return +(s.co2_25/t_co2_25*100).toFixed(1);}),backgroundColor:'#0F766E99',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:9,padding:10}}},scales:{x:{ticks:{font:{size:8}},grid:{display:false},border:{display:false}},y:{ticks:{callback:function(v){return v+'%';}},grid:{color:gc},border:{display:false}}}}});
+  new Chart(document.getElementById('c-co2-div'), {type:'bar',data:{labels:classified.map(function(s){return s.sector.split(' ').slice(0,2).join(' ');}),datasets:[{label:'Spend %',data:classified.map(function(s){return t25_spend>0?+(s.v25/t25_spend*100).toFixed(1):0;}),backgroundColor:'#1A3A5C99',borderRadius:3},{label:'Carbon % (est.)',data:classified.map(function(s){return t_co2_25>0?+(s.co2_25/t_co2_25*100).toFixed(1):0;}),backgroundColor:'#0F766E99',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:9,padding:10}}},scales:{x:{ticks:{font:{size:8}},grid:{display:false},border:{display:false}},y:{ticks:{callback:function(v){return v+'%';}},grid:{color:gc},border:{display:false}}}}});
 
   var ctbl = document.getElementById('t-carbon');
   if (ctbl) {
@@ -96,7 +121,8 @@ function initCarbon() {
       var d = s.co2_24>0?(s.co2_25/s.co2_24-1)*100:null;
       var dc = d===null?'p-blue':d>10?'p-dn':d<-10?'p-up':'p-neu';
       var dt = d===null?'New':(d>0?'+':'')+d.toFixed(0)+'%';
-      ctbl.innerHTML += '<tr><td class="rname">'+s.sector+'</td><td class="rv">'+s.ei+'</td><td class="rv">'+s.co2_24.toFixed(0)+'t</td><td class="rv">'+s.co2_25.toFixed(0)+'t</td><td class="rv"><span class="pill '+dc+'">'+dt+'</span></td><td class="rv">'+(s.co2_25/t_co2_25*100).toFixed(1)+'%</td></tr>';
+      var pctCO2 = t_co2_25>0?(s.co2_25/t_co2_25*100).toFixed(1):'0.0';
+      ctbl.innerHTML += '<tr><td class="rname">'+s.sector+'</td><td class="rv">'+s.ei+'</td><td class="rv">'+s.co2_24.toFixed(0)+'t</td><td class="rv">'+s.co2_25.toFixed(0)+'t</td><td class="rv"><span class="pill '+dc+'">'+dt+'</span></td><td class="rv">'+pctCO2+'%</td></tr>';
     });
     ctbl.innerHTML += '</tbody>';
   }
@@ -104,6 +130,13 @@ function initCarbon() {
 
 
 function navV(id,el,idx) {
+  var current = document.querySelector('.view.on');
+  if (current && current.id !== 'v-' + id) {
+    current.querySelectorAll('canvas').forEach(function(c) {
+      var inst = Chart.getChart(c); if (inst) inst.destroy();
+    });
+    chartsBuilt[current.id.replace('v-','')] = false;
+  }
   nav(id,el);
 }
 
@@ -174,8 +207,8 @@ body{font-family:var(--f);background:var(--bg);color:var(--ink);font-size:14px;l
 .sb-divider{height:1px;background:var(--rule);margin:.5rem 0}
 
 /* ── VIEW PANES ── */
-.view{display:none}
-.view.on{display:block}
+.view{position:absolute;opacity:0;pointer-events:none;width:calc(100% - 3rem);z-index:-1;top:0;left:0}
+.view.on{position:relative;opacity:1;pointer-events:auto;z-index:auto;width:auto}
 
 /* ── PAGE HEADER ── */
 .ph{margin-bottom:1.25rem}
@@ -430,6 +463,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--ink);font-size:14px;l
     <div class="sb-item on" onclick="nav('overview',this)">
       <span class="sb-icon">◎</span>Overview
     </div>
+    <div class="sb-item" onclick="nav('sites',this)"><span class="sb-icon">&#9783;</span>Spend by Site</div>
     <div class="sb-item" onclick="nav('sectors',this)">
       <span class="sb-icon">▦</span>Spend by Sector
     </div>
@@ -984,6 +1018,62 @@ body{font-family:var(--f);background:var(--bg);color:var(--ink);font-size:14px;l
       </div>
     </div>
 
+
+    <!-- ══ VIEW: SPEND BY SITE ══ -->
+    <div class="view" id="v-sites">
+      <div class="ph">
+        <div class="ptag">Spend by site &middot; anonymised facilities dataset &middot; 25 sites</div>
+        <div class="ptitle">Cross-site <span>spend comparison</span></div>
+        <div class="psub">Compare spend, activity, and carbon intensity across selected sites. Use the site selector to isolate or compare specific locations. Sorted by total spend descending.</div>
+      </div>
+      <div class="g2">
+        <div class="card" style="grid-column:1/-1">
+          <div class="ch"><div class="ct">Total spend by site</div><div class="ctg" id="sites-chart-label">All 25 sites selected</div></div>
+          <div class="cw" style="height:300px"><canvas id="c-sites-bar"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch">
+          <div class="ct">Site performance table</div>
+          <div class="ctg" id="sites-table-label">Ranked by total spend</div>
+        </div>
+        <div class="twrap"><table class="tbl" id="t-sites">
+          <thead><tr>
+            <th>#</th>
+            <th>Site</th>
+            <th class="r">Total spend</th>
+            <th class="r">% of total</th>
+            <th class="r">Invoice lines</th>
+            <th class="r">Suppliers</th>
+            <th class="r">Avg line value</th>
+            <th class="r">Est. CO&#8322;e</th>
+            <th>Spend bar</th>
+          </tr></thead>
+          <tbody id="sites-tbody"></tbody>
+        </table></div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="ch"><div class="ct">Spend distribution</div><div class="ctg">Top 5 vs rest</div></div>
+          <div class="cw" style="height:240px"><canvas id="c-sites-donut"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">Lines vs spend — outlier signal</div><div class="ctg">High lines + low spend = high-frequency low-value procurement</div></div>
+          <div class="cw" style="height:240px"><canvas id="c-sites-scatter"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Inline chat -->
+      <div style="margin-top:1.5rem;border-top:1px solid var(--rule);padding-top:.75rem;padding-bottom:1.5rem">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink4);margin-bottom:.375rem">Ask SPIE about this dataset</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="chat-input" id="chat-in-sites" type="text" placeholder="Which site has the highest spend? Which has the most suppliers?" onkeydown="if(event.key===&#39;Enter&#39;)sendChat(&#39;sites&#39;)">
+          <button class="chat-send" onclick="sendChat(&#39;sites&#39;)">Ask SPIE</button>
+        </div>
+        <div id="chat-msgs-sites" style="margin-top:.75rem;display:none;max-height:200px;overflow-y:auto"></div>
+      </div>
+    </div>
+
     </div><!-- /views -->
 
 
@@ -1059,7 +1149,9 @@ const DS = {
 
   // Sector alias: map PSL cats to the shape buildCharts expects
   DS.sectors = DS.cats.map(function(c) {
-    return { name: c.n, v24: Math.round(c.spend * 0.52), v25: Math.round(c.spend * 0.48), p24: c.pct, p25: c.pct, cls: 'sp-oth' };
+    // Approximate CO2 using overall portfolio intensity (3972.6t / £24.8M = 0.16 tCO2/£1K)
+    var co2est = Math.round(c.spend / 1000 * 0.16 * 10) / 10;
+    return { name: c.n, v24: Math.round(c.spend * 0.52), v25: Math.round(c.spend * 0.48), p24: c.pct, p25: c.pct, cls: 'sp-oth', co2: co2est };
   });
 
   // Supplier alias: map DS.sups (KHC top-50) to expected shape
@@ -1227,23 +1319,52 @@ let chartsBuilt = {};
 
 /* ── NAVIGATION ── */
 function nav(id, el) {
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
-  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('on'));
+  var current = document.querySelector('.view.on');
+  if (current && current.id !== 'v-' + id) {
+    current.querySelectorAll('canvas').forEach(function(c) {
+      var inst = Chart.getChart(c); if (inst) inst.destroy();
+    });
+    chartsBuilt[current.id.replace('v-','')] = false;
+  }
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});
+  document.querySelectorAll('.sb-item').forEach(function(i){i.classList.remove('on');});
   document.getElementById('v-'+id).classList.add('on');
   if(el) el.classList.add('on');
   if(!chartsBuilt[id]) { buildCharts(id); chartsBuilt[id]=true; }
 }
 
 /* ── BUILD ALL CHARTS FOR VIEW ── */
+function clearView(id) {
+  var view = document.getElementById('v-' + id);
+  if (!view) return;
+  // Destroy any surviving Chart.js instances (belt-and-braces)
+  view.querySelectorAll('canvas').forEach(function(c) {
+    var inst = Chart.getChart(c); if (inst) inst.destroy();
+  });
+  // Clear all injectable text/table containers
+  var injectIds = [
+    'krow-overview','krow-ap','krow-carbon',
+    'primary-insight','ap-signals-list','yoy-signals',
+    'sup-signal-panel','exec-drill-content','actions-list',
+    'sites-tbody','sites-chart-label','sites-table-label',
+  ];
+  injectIds.forEach(function(cid) {
+    var el = document.getElementById(cid);
+    if (el && view.contains(el)) el.innerHTML = '';
+  });
+  // Clear all krow divs and table bodies inside this view
+  view.querySelectorAll('.krow').forEach(function(el) { el.innerHTML = ''; });
+  view.querySelectorAll('tbody').forEach(function(el) { el.innerHTML = ''; });
+}
+
 function buildCharts(id) {
+  clearView(id);
+  if(id==='sites')    { initSites();     return; }
   if(id==='ap')       { initAP();        return; }
-  if(id==='carbon')   { initCarbon();   return; }
+  if(id==='carbon')   { initCarbon();    return; }
   if(id==='decisions'){ initDecisions(); return; }
-  const s = DS.summary, sec = DS.sectors, sup = DS.suppliers;
-  const t24 = s.total24, t25 = s.total25;
 
   if(id==='overview') {
-    // KPI strip — uses KHC DS.summary; refreshed by site selector
     const s = DS.summary;
     const fM2 = v => v>=1e6?'£'+(v/1e6).toFixed(2)+'M':v>=1000?'£'+(v/1e3).toFixed(0)+'K':'£'+Math.round(v);
     const kdata = [
@@ -1283,7 +1404,13 @@ function buildCharts(id) {
   }
 
   if(id==='sectors') {
-    const classified = sec.filter(s=>s.name!=='Unclassified');
+    const activeSec = getActiveSectors();
+    const activeT   = getActiveTotal();
+    if(activeT === 0) {
+      document.getElementById('t-sectors').innerHTML = '<tr><td colspan="4" style="padding:2rem;text-align:center;color:var(--ink4)">No sites selected — use the site selector to filter</td></tr>';
+      return;
+    }
+    const classified = activeSec.filter(s=>s.name!=='Unclassified');
     // Donut
     new Chart(document.getElementById('c-sec-donut'),{
       type:'doughnut',
@@ -1291,7 +1418,7 @@ function buildCharts(id) {
         datasets:[{data:classified.map(s=>s.v25),backgroundColor:C.pal,borderWidth:2,borderColor:'#fff',hoverOffset:8}]},
       options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
         plugins:{legend:{position:'right',labels:{boxWidth:9,padding:8,font:{size:9}}},
-        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fM(ctx.raw)} (${fP(ctx.raw,t25)})`}}}}
+        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fM(ctx.raw)} (${activeT>0?(ctx.raw/activeT*100).toFixed(1):'0.0'}%)`}}}}
     });
     // Bar YoY
     const sorted = [...classified].sort((a,b)=>b.v25-a.v25);
@@ -1299,25 +1426,22 @@ function buildCharts(id) {
       type:'bar',
       data:{labels:sorted.map(s=>s.name.split(' ').slice(0,2).join(' ')),
         datasets:[
-          {label:'2024',data:sorted.map(s=>s.v24),backgroundColor:C.navy+'66',borderRadius:3,borderSkipped:false},
-          {label:'2025',data:sorted.map(s=>s.v25),backgroundColor:C.psl+'88',borderRadius:3,borderSkipped:false},
+          {label:'Sector spend',data:sorted.map(s=>s.v25),backgroundColor:C.psl+'88',borderRadius:3,borderSkipped:false},
         ]},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{position:'bottom',labels:{boxWidth:9,padding:10}},
-        tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fM(ctx.raw)}}},
+        tooltip:{callbacks:{label:ctx=>fM(ctx.raw)}}},
         scales:{x:{ticks:{font:{size:8}},grid:{display:false},border:{display:false}},y:{ticks:{callback:v=>fM(v)},grid:{color:gc},border:{display:false}}}}
     });
     // Sector table
     const tbl = document.getElementById('t-sectors');
-    tbl.innerHTML = `<thead><tr><th>Sector</th><th class="r">2024</th><th class="r">2024%</th><th class="r">2025</th><th class="r">2025%</th><th class="r">Change</th></tr></thead><tbody>`;
-    sec.forEach(s=>{
-      const delta = s.v24>0 ? (s.v25/s.v24-1)*100 : null;
-      const dCls = delta===null?'p-neu':delta>10?'p-up':delta<-10?'p-dn':'p-neu';
-      const dTxt = delta===null?'New':(delta>0?'+':'')+delta.toFixed(0)+'%';
-      tbl.innerHTML += `<tr><td><div class="rname"><span class="sec-pill ${s.cls}">${s.name}</span></div></td>
-        <td class="rv">${fM(s.v24)}</td><td class="rv">${fP(s.v24,t24)}</td>
-        <td class="rv">${fM(s.v25)}</td><td class="rv">${fP(s.v25,t25)}</td>
-        <td class="rv"><span class="pill ${dCls}">${dTxt}</span></td></tr>`;
+    tbl.innerHTML = `<thead><tr><th>Sector</th><th class="r">Spend</th><th class="r">% of total</th><th class="r">CO₂e est.</th></tr></thead><tbody>`;
+    activeSec.forEach(s=>{
+      const pct = activeT>0 ? (s.v25/activeT*100).toFixed(1) : '0.0';
+      const co2est = s.co2 !== undefined ? s.co2.toFixed(0)+'t' : '—';
+      tbl.innerHTML += `<tr><td><div class="rname"><span class="sec-pill ${s.cls||'sp-oth'}">${s.name}</span></div></td>
+        <td class="rv">${fM(s.v25)}</td><td class="rv">${pct}%</td>
+        <td class="rv" style="color:var(--teal)">${co2est}</td></tr>`;
     });
     tbl.innerHTML += '</tbody>';
   }
@@ -1325,14 +1449,20 @@ function buildCharts(id) {
   if(id==='suppliers') {
     // Supplier table
         const tbl = document.getElementById('t-suppliers');
-    if(!DS.suppliers || DS.suppliers.length === 0) {
+    var activeSups = getActiveSups();
+    if(getActiveTotal() === 0) {
+      tbl.innerHTML = '<tr><td colspan="7" style="padding:2rem;text-align:center;color:var(--ink4)">No sites selected — use the site selector to filter</td></tr>';
+      return;
+    }
+    if(!activeSups || activeSups.length === 0) {
       tbl.innerHTML = '<tr><td colspan="7" style="padding:1.5rem;text-align:center;color:var(--ink4)">No supplier data available</td></tr>';
     } else {
       tbl.innerHTML = `<thead><tr><th>#</th><th>Supplier</th><th>Sector</th><th class="r">Est. Spend</th><th class="r">No-PO</th><th class="r">CO₂e</th><th>Signal</th></tr></thead><tbody>`;
-      const maxV = Math.max(...DS.suppliers.map(s=>s.v25 || 0));
-      DS.suppliers.forEach((s,i)=>{
-        const fmtSpend = s.v25 >= 1e6 ? '£'+(s.v25/1e6).toFixed(2)+'M' : '£'+(s.v25/1e3).toFixed(0)+'K';
-        const fmtCO2   = s.co2  >= 1000 ? (s.co2/1000).toFixed(1)+'kt' : s.co2.toFixed(0)+'t';
+      const maxV = Math.max(...activeSups.map(function(s){return s.v25||0;}));
+      activeSups.forEach(function(s,i){
+        const fmtSpend = s.v25 >= 1e6 ? '£'+(s.v25/1e6).toFixed(2)+'M' : s.v25 >= 1000 ? '£'+(s.v25/1e3).toFixed(0)+'K' : '£'+(s.v25||0).toFixed(0);
+        const rawCO2   = (typeof s.co2 === 'number' && !isNaN(s.co2)) ? s.co2 : 0;
+        const fmtCO2   = rawCO2 >= 1000 ? (rawCO2/1000).toFixed(1)+'kt' : rawCO2.toFixed(0)+'t';
         const poPillCls = s.poPct === 0 ? 'p-dn' : s.poPct > 80 ? 'p-up' : 'p-amber';
         const poPillTxt = s.poPct === 0 ? 'No PO' : s.poPct+'% PO';
         const bw = maxV>0?(s.v25/maxV*100).toFixed(0):0;
@@ -1352,77 +1482,78 @@ function buildCharts(id) {
     }
 
     // Top 10 2025 bar
-    const top10 = DS.suppliers.filter(s=>s.v25>0).slice(0,10);
+    const allActiveSups = getActiveSups();
+    const top10 = allActiveSups.filter(s=>(s.v25||0)>0).slice(0,10);
     new Chart(document.getElementById('c-sup25'),{
       type:'bar',
       data:{labels:top10.map(s=>s.name.split(' ')[0]+'...'),
-        datasets:[{data:top10.map(s=>s.v25),backgroundColor:C.pal,borderRadius:4,borderSkipped:false}]},
+        datasets:[{data:top10.map(s=>s.v25||0),backgroundColor:C.pal,borderRadius:4,borderSkipped:false}]},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>top10[ctx.dataIndex].name+': '+fM(ctx.raw)}}},
         scales:{x:{ticks:{font:{size:9}},grid:{display:false},border:{display:false}},y:{ticks:{callback:v=>fM(v)},grid:{color:gc},border:{display:false}}}}
     });
 
     // Concentration
-    const top5_24 = DS.suppliers.slice(0,5).reduce((a,s)=>a+s.v24,0);
-    const top5_25 = DS.suppliers.filter(s=>s.v25>0).slice(0,5).reduce((a,s)=>a+s.v25,0);
+    const activeT2   = getActiveTotal();
+    const top5spend  = allActiveSups.slice(0,5).reduce((a,s)=>a+(s.v25||0),0);
     new Chart(document.getElementById('c-conc'),{
       type:'doughnut',
-      data:{labels:['Top 5 suppliers 2024','Rest 2024','Top 5 suppliers 2025','Rest 2025'],
-        datasets:[
-          {data:[top5_24,t24-top5_24],backgroundColor:[C.navy,C.navy+'33'],borderWidth:2,borderColor:'#fff'},
-          {data:[top5_25,t25-top5_25],backgroundColor:[C.psl,C.psl+'33'],borderWidth:2,borderColor:'#fff'},
-        ]},
+      data:{labels:['Top 5 suppliers','Remaining suppliers'],
+        datasets:[{data:[top5spend, Math.max(0,activeT2-top5spend)],backgroundColor:[C.navy,C.navy+'33'],borderWidth:2,borderColor:'#fff'}]},
       options:{responsive:true,maintainAspectRatio:false,cutout:'40%',
         plugins:{legend:{position:'bottom',labels:{boxWidth:9,padding:8}},
-        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fM(ctx.raw)} (${((ctx.raw/(ctx.datasetIndex===0?t24:t25))*100).toFixed(1)}%)`}}}}
+        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fM(ctx.raw)} (${activeT2>0?(ctx.raw/activeT2*100).toFixed(1):'0.0'}%)`}}}}
     });
   }
 
   if(id==='yoy') {
-    // YoY sector waterfall-style bar
-    const sec = DS.sectors.filter(s=>s.name!=='Unclassified');
-    const changes = sec.map(s=>s.v25-s.v24).sort((a,b)=>b-a);
-    const labels = [...sec].sort((a,b)=>(b.v25-b.v24)-(a.v25-a.v24)).map(s=>s.name.split(' ').slice(0,2).join('\n'));
-    const sorted_sec = [...sec].sort((a,b)=>(b.v25-b.v24)-(a.v25-a.v24));
+    const activeSec = getActiveSectors().filter(s=>s.name!=='Unclassified');
+    if(getActiveTotal() === 0) {
+      var yoyEmpty = document.getElementById('yoy-signals');
+      if(yoyEmpty) yoyEmpty.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--ink4)">No sites selected — use the site selector to filter</div>';
+      return;
+    }
+    const sorted_sec = [...activeSec].sort((a,b)=>(b.v25||0)-(a.v25||0));
     new Chart(document.getElementById('c-yoy-sec'),{
       type:'bar',
       data:{labels:sorted_sec.map(s=>s.name.split(' ').slice(0,2).join(' ')),
         datasets:[{
-          data:sorted_sec.map(s=>s.v25-s.v24),
-          backgroundColor:sorted_sec.map(s=>(s.v25-s.v24)>0?C.psl+'99':C.red+'99'),
+          data:sorted_sec.map(s=>s.v25||0),
+          backgroundColor:C.psl+'99',
           borderRadius:4,borderSkipped:false
         }]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fM(Math.abs(ctx.raw))+' '+(ctx.raw>0?'increase':'decrease')}}},
-        scales:{x:{ticks:{callback:v=>fM(Math.abs(v))},grid:{color:gc},border:{display:false}},y:{grid:{display:false},border:{display:false},ticks:{font:{size:9}}}}}
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fM(ctx.raw)+' spend'}}},
+        scales:{x:{ticks:{callback:v=>fM(v)},grid:{color:gc},border:{display:false}},y:{grid:{display:false},border:{display:false},ticks:{font:{size:9}}}}}
     });
 
-    // Transaction band chart
+    // Transaction band chart — scale by active fraction
+    const yoyFrac = getActiveFraction();
+    const AP_B = AP_DATA.tx_bands;
     new Chart(document.getElementById('c-yoy-bands'),{
       type:'bar',
-      data:{labels:['<£1K','£1K–£10K','£10K–£100K','>£100K'],
+      data:{labels:AP_B.labels,
         datasets:[
-          {label:'2024',data:[3200,9800,3900,492],backgroundColor:C.navy+'66',borderRadius:3},
-          {label:'2025',data:[2100,8200,3700,735],backgroundColor:C.psl+'88',borderRadius:3},
+          {label:'2024 (scaled)',data:AP_B.v24.map(v=>Math.round(v*yoyFrac)),backgroundColor:C.navy+'66',borderRadius:3},
+          {label:'2025 (scaled)',data:AP_B.v25.map(v=>Math.round(v*yoyFrac)),backgroundColor:C.psl+'88',borderRadius:3},
         ]},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{position:'bottom',labels:{boxWidth:9,padding:10}}},
         scales:{x:{grid:{display:false},border:{display:false}},y:{ticks:{},grid:{color:gc},border:{display:false}}}}
     });
 
-    // YoY signals
+    // YoY signals — KHC-relevant signals
     const signals = [
-      {dot:'red',  title:'Electrical & Power Systems — £17.9M → £9.9M', body:'45% reduction. Down to Earth Electrical (£2.79M) fully exited. Anord Mardix, Electrogestion, Montajes Electricos all materially reduced. This is electrical commissioning phase completion — not relationship breakdown.'},
-      {dot:'green',title:'Mechanical Fabrication & Pipework — £5.2M → £9.7M', body:'86% growth. Karl Steiger GmbH grew from £1.14M to £3.58M. ML Weld Engineering from £265K to £1.63M. YEG Group newly appearing at £2.22M. Phase transition: structural and mechanical delivery now dominant.'},
-      {dot:'green',title:'Equipment Hire & Site Services — £2.0M → £4.1M', body:'105% growth. PAX Bouw-en Industrieservice up from £738K to £2.17M. ODN Oil BV new in 2025 (£761K) — HVO100 sustainable fuel, a supply-side sustainability signal. RENTALOAD new with environmental monitoring equipment.'},
-      {dot:'red',  title:'Professional Services & Consulting — £1.54M → £232K', body:'85% reduction. Design, specification, and consultancy work front-loaded in 2024 has completed. Residual spend is Mazars payroll compliance — ongoing operational, not project-cycle.'},
-      {dot:'amber',title:'Staffing & Workforce Supply — £3.2M → £2.2M', body:'32% reduction. SAS Transition OU (£688K) and Intel Pay UAB (£642K) absent in 2025 — Baltic payroll intermediaries no longer used. Labour model has changed. Captain Power/Projects grew from £871K to £1.52M — QC inspection, not general labour.'},
-      {dot:'green',title:'Credit value — £293K → £30K', body:'90% reduction in credit note value. Fewer billing disputes, fewer material returns, fewer contractual disagreements. Supply base is maturing in its working relationship with the programme.'},
+      {dot:'amber', title:'No-PO spend — 18.1% of lines have no purchase order reference', body:'Across all selected sites, 18.1% of invoice lines were processed without a PO reference. This represents off-contract procurement, exception-route processing, or system discipline gaps. At current spend levels this is material.'},
+      {dot:'red',   title:'Facility & Property Management — 50.1% of total spend', body:'The largest single category represents over half of all spend. High concentration in a single category without robust category management creates price risk and limits competitive leverage.'},
+      {dot:'green', title:'Supplier count — 1,373 across portfolio', body:'A large and diverse supply base with significant long-tail spend. 358 single-use suppliers account for a relatively small proportion of total spend — rationalisation opportunity exists.'},
+      {dot:'amber', title:'AP exception volume — duplicate lines and outstanding balances', body:'77,097 duplicate invoice lines (£3.8M) and 557 outstanding balance lines (£2.3M) represent the largest addressable AP exception categories. These are operational inefficiency signals.'},
+      {dot:'green', title:'Top-supplier concentration — Supplier 001 at 12% of spend', body:'The single largest supplier relationship represents 12% of total spend. While concentrated, this is within governance norms for a facilities portfolio of this scale — the key question is whether contractual governance is proportionate.'},
     ];
     const el = document.getElementById('yoy-signals');
+    el.innerHTML = '';
     signals.forEach(sig=>{
       const col = sig.dot==='red'?'var(--dn)':sig.dot==='green'?'var(--up)':'var(--amber)';
-      const bg  = sig.dot==='red'?'var(--dn-l)':sig.dot==='green'?'var(--up-l)':'var(--amber-l)';
       el.innerHTML += `<div style="display:flex;gap:12px;padding:.75rem 0;border-bottom:1px solid var(--rule);align-items:flex-start">
         <div style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0;margin-top:5px"></div>
         <div><div style="font-weight:700;font-size:12.5px;margin-bottom:3px">${sig.title}</div>
@@ -1818,6 +1949,127 @@ function exportActions() {
 const ALL_SITES = DS.sites || [];
 let selectedSites = new Set(ALL_SITES.map(s => s.code)); // all selected by default
 
+/* ═══════════════════════════════════════════════════════════════════
+   GLOBAL SITE FILTER — applied to ALL views
+   getActiveFraction(): proportion of total spend in selected sites
+   getActiveSups():     suppliers filtered/scaled to selected sites
+   getActiveCats():     PSL categories filtered to selected sites
+   getActiveSIC():      SIC sections filtered to selected sites
+   Any view that renders data must call these, not DS.* directly.
+═══════════════════════════════════════════════════════════════════ */
+
+function getActiveFraction() {
+  if (selectedSites.size === 0) return 0;
+  if (selectedSites.size === ALL_SITES.length) return 1;
+  var selSpend = ALL_SITES
+    .filter(function(s){ return selectedSites.has(s.code); })
+    .reduce(function(a,s){ return a + s.spend; }, 0);
+  var totalSpend = ALL_SITES.reduce(function(a,s){ return a + s.spend; }, 0) || 1;
+  return selSpend / totalSpend;
+}
+
+function getActiveSiteData() {
+  if (selectedSites.size === ALL_SITES.length) return ALL_SITES;
+  return ALL_SITES.filter(function(s) { return selectedSites.has(s.code); });
+}
+
+function getActiveTotal() {
+  return getActiveSiteData().reduce(function(a,s){ return a + s.spend; }, 0);
+}
+
+function getActiveSups() {
+  var frac = getActiveFraction();
+  if (frac >= 0.999) return DS.suppliers;
+  // Scale each supplier's spend proportionally; keep top 20 by scaled spend
+  return DS.suppliers.map(function(s) {
+    return Object.assign({}, s, {
+      v24: Math.round(s.v24 * frac),
+      v25: Math.round(s.v25 * frac),
+    });
+  }).sort(function(a,b){ return b.v25 - a.v25; });
+}
+
+function getActiveCats() {
+  var frac = getActiveFraction();
+  if (frac >= 0.999) return DS.cats;
+  return DS.cats.map(function(c) {
+    return Object.assign({}, c, {
+      spend: Math.round(c.spend * frac),
+    });
+  });
+}
+
+function getActiveSectors() {
+  var frac = getActiveFraction();
+  if (frac >= 0.999) return DS.sectors;
+  return DS.sectors.map(function(s) {
+    return Object.assign({}, s, {
+      v24: Math.round(s.v24 * frac),
+      v25: Math.round(s.v25 * frac),
+      co2: s.co2 ? Math.round(s.co2 * frac * 10) / 10 : 0,
+    });
+  });
+}
+
+function getActiveMonthly() {
+  var frac = getActiveFraction();
+  if (frac >= 0.999) return DS.monthly;
+  return DS.monthly.map(function(m) {
+    return Object.assign({}, m, { v: Math.round(m.v * frac) });
+  });
+}
+
+function getActiveSIC() {
+  var frac = getActiveFraction();
+  if (frac >= 0.999) return DS.sic;
+  return (DS.sic || []).map(function(s) {
+    return Object.assign({}, s, {
+      spend: Math.round((s.spend||0) * frac),
+      co2:   Math.round(((s.co2||0) * frac) * 10) / 10,
+    });
+  });
+}
+
+function getActiveCO2() {
+  return getActiveSiteData().reduce(function(a,s){ return a + s.co2; }, 0);
+}
+
+/* Call this after any site selection change to rebuild the active view */
+function refreshCurrentView() {
+  var activeView = document.querySelector('.view.on');
+  if (!activeView) return;
+  var id = activeView.id.replace('v-', '');
+
+  // Destroy all Chart.js instances living inside this view
+  var canvases = activeView.querySelectorAll('canvas');
+  canvases.forEach(function(canvas) {
+    var chartInst = Chart.getChart(canvas);
+    if (chartInst) chartInst.destroy();
+  });
+
+  // Clear all injected DOM containers inside this view
+  var clearIds = [
+    'krow-overview','krow-ap','krow-carbon','krow-overview',
+    'ap-signals-list','yoy-signals','sup-signal-panel',
+    'actions-list','sites-tbody','exec-drill-content',
+    'primary-insight'
+  ];
+  clearIds.forEach(function(cid) {
+    var el = document.getElementById(cid);
+    if (el && activeView.contains(el)) el.innerHTML = '';
+  });
+  // Clear any krow divs inside the active view
+  activeView.querySelectorAll('.krow').forEach(function(el) { el.innerHTML = ''; });
+  // Clear table bodies
+  activeView.querySelectorAll('tbody').forEach(function(el) { el.innerHTML = ''; });
+
+  // Force rebuild — defer so browser applies display changes before Chart.js measures canvas
+  chartsBuilt[id] = false;
+  buildCharts(id);
+  chartsBuilt[id] = true;
+}
+
+
 function fmtMoney(v) {
   return v >= 1e6 ? '£' + (v/1e6).toFixed(2) + 'M'
        : v >= 1000 ? '£' + (v/1000).toFixed(0) + 'K'
@@ -1838,10 +2090,16 @@ function initSiteSelector() {
 }
 
 function toggleSite(code, checked) {
-  if (checked) selectedSites.add(code);
-  else selectedSites.delete(code);
+  if (typeof checked !== 'undefined') {
+    if (checked) selectedSites.add(code);
+    else selectedSites.delete(code);
+  } else {
+    if(selectedSites.has(code)) selectedSites.delete(code);
+    else selectedSites.add(code);
+  }
   updateSiteTotals();
-  refreshKPIs();
+  updateSiteCount();
+  refreshCurrentView();
 }
 
 function toggleAllSites() {
@@ -1865,6 +2123,7 @@ function toggleAllSites() {
   }
   updateSiteTotals();
   refreshKPIs();
+  refreshCurrentView();
 }
 
 function getSelectedSiteData() {
@@ -1914,33 +2173,20 @@ function refreshKPIs() {
 
 /* ── SITE SELECTOR INIT & LOGIC ────────────────────────────────────────────── */
 
-function toggleSite(code) {
-  if(selectedSites.has(code)) {
-    if(selectedSites.size > 1) selectedSites.delete(code); // always keep at least 1
-  } else {
-    selectedSites.add(code);
-  }
-  var cbId = 'cb-'+code.replace(/\s/g, '-');
-  var cb = document.getElementById(cbId);
-  if(cb) cb.className = 'site-sel-cb' + (selectedSites.has(code) ? ' checked' : '');
-  updateSiteCount();
-  refreshActiveViews();
-}
-
 function selectAllSites(all) {
   if(all) {
     DS.sites.forEach(function(s) { selectedSites.add(s.code); });
   } else {
     selectedSites.clear();
-    selectedSites.add(DS.sites[0].code); // keep at least one
   }
   // Re-render checkboxes
   DS.sites.forEach(function(s) {
     var cb = document.getElementById('cb-'+s.code.replace(/\s/g, '-'));
     if(cb) cb.className = 'site-sel-cb' + (selectedSites.has(s.code) ? ' checked' : '');
   });
+  updateSiteTotals();
   updateSiteCount();
-  refreshActiveViews();
+  refreshCurrentView();
 }
 
 function updateSiteCount() {
@@ -1955,15 +2201,7 @@ function updateSiteCount() {
   }
 }
 
-function refreshActiveViews() {
-  // Rebuild the overview KPI strip and charts with updated site selection
-  // For now: rebuild overview if it is the active view
-  var ov = document.getElementById('v-overview');
-  if(ov && ov.classList.contains('on')) {
-    var kr = document.getElementById('krow-overview');
-    if(kr) { kr.innerHTML = ''; buildKPIStrip(); }
-  }
-}
+function refreshActiveViews() { refreshCurrentView(); }
 
 function buildKPIStrip() {
   // Compute active totals from selected sites
@@ -1985,10 +2223,137 @@ function buildKPIStrip() {
   ];
   var kr = document.getElementById('krow-overview');
   if(!kr) return;
+  kr.innerHTML = '';
   kdata.forEach(function(k) {
     kr.innerHTML += '<div class="kpi '+k.c+'"><div class="kl">'+k.l+'</div>'
       +'<div class="kv">'+k.v+'</div><div class="ks">'+k.s+'</div>'
       +(k.d?'<div class="kd">'+k.d+'</div>':'')+'</div>';
+  });
+}
+
+/* ══════════════════════════════════════════
+   SPEND BY SITE VIEW
+══════════════════════════════════════════ */
+function initSites() {
+  var activeSiteData = getActiveSiteData().slice().sort(function(a,b){ return b.spend - a.spend; });
+  var activeTotal    = activeSiteData.reduce(function(a,s){ return a+s.spend; }, 0);
+  var fM = function(v){ return v>=1e6?'£'+(v/1e6).toFixed(2)+'M':v>=1000?'£'+(v/1e3).toFixed(0)+'K':'£'+v; };
+  var gc = 'rgba(0,0,0,.04)';
+  var n  = activeSiteData.length;
+
+  // Update labels
+  var lbl = document.getElementById('sites-chart-label');
+  if(lbl) lbl.textContent = n + ' of ' + ALL_SITES.length + ' sites selected';
+  var tlbl = document.getElementById('sites-table-label');
+  if(tlbl) tlbl.textContent = 'Ranked by total spend · ' + n + ' sites';
+
+  // ── BAR CHART ──────────────────────────────────────────────────────
+  var pal = ['#1A3A5C','#2558A0','#3A72C0','#18BE65','#0B7D40','#15A559',
+             '#B45309','#D97706','#F59E0B','#0F766E','#14B8A6','#06B6D4',
+             '#7C3AED','#8B5CF6','#6D28D9','#991B1B','#DC2626','#EF4444',
+             '#065F46','#047857','#059669','#92400E','#78350F','#451A03','#1C1917'];
+  new Chart(document.getElementById('c-sites-bar'), {
+    type: 'bar',
+    data: {
+      labels: activeSiteData.map(function(s){ return s.code; }),
+      datasets: [{
+        data: activeSiteData.map(function(s){ return s.spend; }),
+        backgroundColor: activeSiteData.map(function(_,i){ return pal[i % pal.length]+'CC'; }),
+        borderRadius: 4,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: function(ctx){
+          var s = activeSiteData[ctx.dataIndex];
+          return [fM(s.spend) + ' (' + s.pct.toFixed(1) + '% of total)',
+                  s.lines.toLocaleString() + ' lines · ' + s.sups + ' suppliers'];
+        }}}
+      },
+      scales: {
+        x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 10 } } },
+        y: { ticks: { callback: function(v){ return fM(v); } }, grid: { color: gc }, border: { display: false } }
+      }
+    }
+  });
+
+  // ── TABLE ──────────────────────────────────────────────────────────
+  var tbody = document.getElementById('sites-tbody');
+  var maxSpend = activeSiteData[0] ? activeSiteData[0].spend : 1;
+  if(tbody) {
+    tbody.innerHTML = activeSiteData.map(function(s, i) {
+      var avg  = s.lines > 0 ? Math.round(s.spend / s.lines) : 0;
+      var pct  = activeTotal > 0 ? (s.spend / activeTotal * 100).toFixed(1) : '0.0';
+      var barW = (s.spend / maxSpend * 100).toFixed(0);
+      var rowBg = i % 2 === 0 ? '#fff' : 'var(--bg2)';
+      // Highlight top and bottom outliers
+      var rankStyle = i === 0 ? 'font-weight:700;color:var(--navy)' :
+                      i === activeSiteData.length-1 ? 'color:var(--ink4)' : '';
+      return '<tr style="background:' + rowBg + '">'
+        + '<td class="rv" style="color:var(--ink4);width:24px">' + (i+1) + '</td>'
+        + '<td><div class="rname" style="' + rankStyle + '">' + s.code + '</div></td>'
+        + '<td class="rv">' + fM(s.spend) + '</td>'
+        + '<td class="rv">' + pct + '%</td>'
+        + '<td class="rv">' + s.lines.toLocaleString() + '</td>'
+        + '<td class="rv">' + s.sups + '</td>'
+        + '<td class="rv">£' + avg.toLocaleString() + '</td>'
+        + '<td class="rv" style="color:var(--teal)">' + s.co2.toFixed(0) + 't</td>'
+        + '<td><div class="rbar" style="min-width:80px"><div class="rf" style="width:' + barW + '%;background:var(--navy2)"></div></div></td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  // ── DONUT: top 5 vs rest ───────────────────────────────────────────
+  var top5  = activeSiteData.slice(0, 5);
+  var rest  = activeSiteData.slice(5);
+  var restSpend = rest.reduce(function(a,s){ return a+s.spend; }, 0);
+  var donutLabels = top5.map(function(s){ return s.code; }).concat(rest.length ? ['Remaining ' + rest.length + ' sites'] : []);
+  var donutData   = top5.map(function(s){ return s.spend; }).concat(rest.length ? [restSpend] : []);
+  var donutColors = ['#1A3A5C','#2558A0','#18BE65','#B45309','#0F766E','#E4E2DE'];
+  new Chart(document.getElementById('c-sites-donut'), {
+    type: 'doughnut',
+    data: { labels: donutLabels, datasets: [{ data: donutData, backgroundColor: donutColors, borderWidth: 2, borderColor: '#fff', hoverOffset: 6 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '55%',
+      plugins: {
+        legend: { position: 'right', labels: { boxWidth: 9, padding: 8, font: { size: 9 } } },
+        tooltip: { callbacks: { label: function(ctx){ return ctx.label + ': ' + fM(ctx.raw) + ' (' + (ctx.raw/activeTotal*100).toFixed(1) + '%)'; } } }
+      }
+    }
+  });
+
+  // ── SCATTER: lines vs spend (outlier signal) ──────────────────────
+  new Chart(document.getElementById('c-sites-scatter'), {
+    type: 'scatter',
+    data: {
+      datasets: [{
+        label: 'Sites',
+        data: activeSiteData.map(function(s){ return { x: s.spend, y: s.lines, label: s.code }; }),
+        backgroundColor: pal.map(function(c){ return c + 'CC'; }),
+        pointRadius: 7,
+        pointHoverRadius: 10,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: function(ctx){
+            var d = ctx.raw;
+            var s = activeSiteData.find(function(x){ return x.spend===d.x && x.lines===d.y; });
+            return s ? [s.code, fM(s.spend) + ' spend', s.lines.toLocaleString() + ' lines'] : '';
+          }
+        }}
+      },
+      scales: {
+        x: { title: { display: true, text: 'Total spend', font: { size: 10 } }, ticks: { callback: function(v){ return fM(v); } }, grid: { color: gc }, border: { display: false } },
+        y: { title: { display: true, text: 'Invoice lines', font: { size: 10 } }, ticks: { callback: function(v){ return v>=1000?(v/1000).toFixed(0)+'K':v; } }, grid: { color: gc }, border: { display: false } }
+      }
+    }
   });
 }
 
