@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SPIE — Spend Procurement Intelligence Engine</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" crossorigin="anonymous"></script>
 <script>
 /* ── DATASET SWITCHER ── */
 function toggleDSModal() {
@@ -1375,7 +1375,6 @@ function buildCharts(id) {
       {l:'Estimated CO₂e',   v:s.co2.toFixed(0)+'t',         sub:'Scope 3 Cat.1 directional',   d:'DEFRA EEIO proxy',           cls:'teal'},
       {l:'Sites covered',    v:s.sites,                       sub:'click panel to filter/compare',d:'default: all selected',     cls:'neu'},
     ];
-    initSiteSelector();
     buildKPIStrip();
     document.getElementById('primary-insight').innerHTML =
       'No-PO spend represents <b>18.1%</b> of all invoice lines. 63.1% of <em>lines</em> lack a PO reference, signalling significant off-contract and exception-route procurement. AP batch processing concentrated at Day 1 (30.4% of lines posted on invoice date). Top supplier A Hammond &amp; Sons represents 12% of total spend — single-relationship concentration warrants governance review.';
@@ -2076,130 +2075,106 @@ function fmtMoney(v) {
        : '£' + Math.round(v);
 }
 
-function initSiteSelector() {
-  const list = document.getElementById('site-list');
-  if (!list || ALL_SITES.length === 0) return;
-  list.innerHTML = ALL_SITES.map(s => `
-    <label class="site-check-row">
-      <input type="checkbox" checked onchange="toggleSite('${s.code}', this.checked)"
-             id="site-cb-${s.code.replace(' ','_')}">
-      <span class="site-check-label">${s.code}</span>
-      <span class="site-check-spend">${fmtMoney(s.spend)}</span>
-    </label>`).join('');
-  updateSiteTotals();
+/* ============================================================
+   SITE SELECTION — single source of truth
+   
+   selectedSites : Set of site code strings currently active.
+                   Initialised to all sites on page load.
+                   Every downstream calculation reads this Set
+                   and nothing else.
+   
+   Only these functions mutate selectedSites:
+     toggleSite()    — one checkbox changed
+     toggleAllSites()— select all / deselect all button
+   
+   Every mutation ends with applySelection() which:
+     1. Updates the sidebar totals and labels
+     2. Calls refreshCurrentView() to rebuild the active tab
+   ============================================================ */
+
+/* Canonical checkbox element ID — one format used everywhere */
+function siteCheckboxId(code) {
+  return 'site-cb-' + code.replace(/\s+/g, '_');
 }
 
-function toggleSite(code, checked) {
-  if (typeof checked !== 'undefined') {
-    if (checked) selectedSites.add(code);
-    else selectedSites.delete(code);
-  } else {
-    if(selectedSites.has(code)) selectedSites.delete(code);
-    else selectedSites.add(code);
-  }
-  updateSiteTotals();
-  updateSiteCount();
-  refreshCurrentView();
-}
+/* applySelection — called after every selectedSites change.
+   Updates all sidebar display elements and rebuilds the active view. */
+function applySelection() {
+  var sites  = getActiveSiteData();
+  var spend  = sites.reduce(function(a, s) { return a + s.spend; }, 0);
+  var lines  = sites.reduce(function(a, s) { return a + s.lines; }, 0);
+  var n      = sites.length;
+  var total  = ALL_SITES.length;
 
-function toggleAllSites() {
-  const allSelected = selectedSites.size === ALL_SITES.length;
-  if (allSelected) {
-    // deselect all
-    selectedSites.clear();
-    ALL_SITES.forEach(s => {
-      const cb = document.getElementById('site-cb-'+s.code.replace(' ','_'));
-      if (cb) cb.checked = false;
-    });
-    document.getElementById('site-toggle-btn').textContent = 'Select all';
-  } else {
-    // select all
-    ALL_SITES.forEach(s => {
-      selectedSites.add(s.code);
-      const cb = document.getElementById('site-cb-'+s.code.replace(' ','_'));
-      if (cb) cb.checked = true;
-    });
-    document.getElementById('site-toggle-btn').textContent = 'Deselect all';
-  }
-  updateSiteTotals();
-  refreshKPIs();
-  refreshCurrentView();
-}
+  /* Sidebar totals panel */
+  var spendEl = document.getElementById('site-total-spend');
+  var linesEl = document.getElementById('site-total-lines');
+  var countEl = document.getElementById('site-count-label');
+  var btnEl   = document.getElementById('site-toggle-btn');
+  if (spendEl) spendEl.textContent = fmtMoney(spend);
+  if (linesEl) linesEl.textContent = lines.toLocaleString() + ' lines';
+  if (countEl) countEl.textContent = (n === total) ? 'All ' + n + ' selected' : n + ' of ' + total + ' selected';
+  if (btnEl)   btnEl.textContent   = (n === total) ? 'Deselect all' : 'Select all';
 
-function getSelectedSiteData() {
-  if (selectedSites.size === ALL_SITES.length) return ALL_SITES;
-  return ALL_SITES.filter(s => selectedSites.has(s.code));
-}
-
-function updateSiteTotals() {
-  const sel = getSelectedSiteData();
-  const totalSpend = sel.reduce((a, s) => a + s.spend, 0);
-  const totalLines = sel.reduce((a, s) => a + s.lines, 0);
-  const n = sel.length;
-  const countEl = document.getElementById('site-count-label');
-  const spendEl = document.getElementById('site-total-spend');
-  const linesEl = document.getElementById('site-total-lines');
-  const btnEl   = document.getElementById('site-toggle-btn');
-  if (countEl) countEl.textContent = n === ALL_SITES.length ? 'All ' + n + ' selected' : n + ' of ' + ALL_SITES.length + ' selected';
-  if (spendEl) spendEl.textContent = fmtMoney(totalSpend);
-  if (linesEl) linesEl.textContent = totalLines.toLocaleString() + ' lines';
-  if (btnEl)   btnEl.textContent   = n === ALL_SITES.length ? 'Deselect all' : 'Select all';
-}
-
-function refreshKPIs() {
-  const sel = getSelectedSiteData();
-  const totalSpend = sel.reduce((a, s) => a + s.spend, 0);
-  const totalLines = sel.reduce((a, s) => a + s.lines, 0);
-  const totalSups  = sel.reduce((a, s) => a + s.sups, 0);
-  const totalCO2   = sel.reduce((a, s) => a + (s.co2 || 0), 0);
-  const avgLine    = totalLines > 0 ? totalSpend / totalLines : 0;
-  // Update KPI tiles if rendered
-  const krow = document.getElementById('krow-overview');
-  if (!krow || krow.children.length === 0) return;
-  // Re-render with filtered values
-  krow.innerHTML = '';
-  const kdata = [
-    {l:'Total spend',      v:fmtMoney(totalSpend), s:sel.length + ' site(s) selected',       d:sel.length + ' / ' + ALL_SITES.length + ' sites',   c:'neu'},
-    {l:'Invoice lines',    v:totalLines.toLocaleString(), s:'across selected sites',           d:'avg £' + Math.round(avgLine).toLocaleString() + '/line', c:'neu'},
-    {l:'Suppliers',        v:totalSups.toLocaleString(),  s:'active across selection',         d:'excl. duplicates',  c:'neu'},
-    {l:'Avg line value',   v:'£' + Math.round(avgLine).toLocaleString(), s:'net per transaction', d:'spend-weighted',    c:'neu'},
-    {l:'Estimated Scope 3',v:totalCO2.toFixed(0) + 't',  s:'tCO₂e directional proxy',         d:'DEFRA EEIO method',  c:'teal'},
-    {l:'Sites selected',   v:sel.length + ' / ' + ALL_SITES.length, s:'click sites panel to filter', d:'default: all',  c:'neu'},
-  ];
-  kdata.forEach(k => {
-    krow.innerHTML += `<div class="kpi ${k.c}"><div class="kl">${k.l}</div><div class="kv">${k.v}</div><div class="ks">${k.s}</div><div class="kd">${k.d}</div></div>`;
-  });
-}
-
-/* ── SITE SELECTOR INIT & LOGIC ────────────────────────────────────────────── */
-
-function selectAllSites(all) {
-  if(all) {
-    DS.sites.forEach(function(s) { selectedSites.add(s.code); });
-  } else {
-    selectedSites.clear();
-  }
-  // Re-render checkboxes
-  DS.sites.forEach(function(s) {
-    var cb = document.getElementById('cb-'+s.code.replace(/\s/g, '-'));
-    if(cb) cb.className = 'site-sel-cb' + (selectedSites.has(s.code) ? ' checked' : '');
-  });
-  updateSiteTotals();
-  updateSiteCount();
-  refreshCurrentView();
-}
-
-function updateSiteCount() {
-  var el = document.getElementById('site-sel-count');
-  if(el) el.textContent = selectedSites.size + ' of ' + DS.sites.length + ' selected';
-  // Update topbar badge
+  /* Topbar dataset badge */
   var badge = document.getElementById('ds-label');
-  if(badge) {
-    badge.textContent = selectedSites.size === DS.sites.length
-      ? 'Healthcare facilities (anonymised)'
-      : selectedSites.size + ' sites selected';
-  }
+  if (badge) badge.textContent = (n === total)
+    ? 'Healthcare facilities (anonymised)'
+    : n + ' sites selected';
+
+  /* Rebuild the currently visible tab */
+  refreshCurrentView();
 }
+
+/* toggleSite — fired by each checkbox onchange handler */
+function toggleSite(code, checked) {
+  if (checked) {
+    selectedSites.add(code);
+  } else {
+    selectedSites.delete(code);
+  }
+  applySelection();
+}
+
+/* toggleAllSites — fired by the "Deselect all / Select all" button */
+function toggleAllSites() {
+  /* If all sites are currently selected, deselect all. Otherwise select all. */
+  var allSelected = (selectedSites.size === ALL_SITES.length);
+  ALL_SITES.forEach(function(s) {
+    if (allSelected) {
+      selectedSites.delete(s.code);
+    } else {
+      selectedSites.add(s.code);
+    }
+    var cb = document.getElementById(siteCheckboxId(s.code));
+    if (cb) cb.checked = !allSelected;
+  });
+  applySelection();
+}
+
+/* initSiteSelector — renders checkboxes once on page load.
+   Each checkbox reflects the current selectedSites state. */
+function initSiteSelector() {
+  var list = document.getElementById('site-list');
+  if (!list || ALL_SITES.length === 0) return;
+  list.innerHTML = ALL_SITES.map(function(s) {
+    var cbId     = siteCheckboxId(s.code);
+    var isActive = selectedSites.has(s.code);
+    return '<label class="site-check-row">'
+      + '<input type="checkbox" ' + (isActive ? 'checked ' : '') + 'id="' + cbId + '" onchange="toggleSite(\'' + s.code + '\', this.checked)">'
+      + '<span class="site-check-label">' + s.code + '</span>'
+      + '<span class="site-check-spend">' + fmtMoney(s.spend) + '</span>'
+      + '</label>';
+  }).join('');
+  applySelection();
+}
+
+/* Legacy aliases — kept so any stale onclick="..." calls don't break */
+function updateSiteTotals()  { applySelection(); }
+function updateSiteCount()   { applySelection(); }
+function selectAllSites(all) { if (all) ALL_SITES.forEach(function(s){selectedSites.add(s.code);}); else selectedSites.clear(); applySelection(); }
+function refreshKPIs()       { refreshCurrentView(); }
+function getSelectedSiteData() { return getActiveSiteData(); }
 
 function refreshActiveViews() { refreshCurrentView(); }
 
@@ -2376,3 +2351,4 @@ initSiteSelector();
 </script>
 </body>
 </html>
+
