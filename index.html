@@ -410,6 +410,64 @@ body{font-family:var(--f);background:var(--bg);color:var(--ink);font-size:14px;l
 .td{width:6px;height:6px;border-radius:50%;background:var(--ink4);animation:typingDot 1.2s ease infinite}
 .td:nth-child(2){animation-delay:.2s}.td:nth-child(3){animation-delay:.4s}
 @keyframes typingDot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* ══════════════════════════════════════════════════════
+   SPIE V2 — vNext Layer CSS
+   All classes prefixed vnx- to avoid collisions.
+   vnx-on  body class = vNext active
+   vnx-off body class = baseline (default)
+   ══════════════════════════════════════════════════════ */
+
+/* vNext master toggle switch */
+.vnx-toggle-wrap{display:flex;align-items:center;gap:.5rem;padding:.375rem .75rem;border-radius:20px;background:var(--bg2);border:1px solid var(--rule);cursor:pointer;user-select:none;transition:all .15s}
+.vnx-toggle-wrap:hover{border-color:var(--psl)}
+.vnx-toggle-wrap.on{background:var(--psl-l);border-color:var(--psl)}
+.vnx-track{width:32px;height:18px;background:var(--bg3);border-radius:9px;position:relative;transition:background .2s;flex-shrink:0;border:1px solid var(--rule2)}
+.vnx-track.on{background:var(--psl-d)}
+.vnx-thumb{width:12px;height:12px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:left .18s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.vnx-track.on .vnx-thumb{left:16px}
+.vnx-lbl{font-size:11.5px;font-weight:700;color:var(--ink3)}
+.vnx-lbl.on{color:var(--psl-d)}
+
+/* vNext badge — marks enhanced columns/cells */
+.vnx-badge{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.05em;background:var(--psl-l);color:var(--psl-d);text-transform:uppercase;vertical-align:middle;margin-left:3px}
+
+/* vNext column visibility: hidden when vNext OFF */
+.vnx-col{transition:opacity .15s}
+body:not(.vnx-on) .vnx-col{display:none!important}
+
+/* vNext insight panels */
+.vnx-panel{border-left:3px solid var(--psl);background:var(--psl-l);border-radius:0 var(--r) var(--r) 0;padding:.625rem 1rem;margin:.5rem 0}
+body:not(.vnx-on) .vnx-panel{display:none!important}
+.vnx-panel-title{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--psl-d);margin-bottom:.35rem;display:flex;align-items:center;gap:.375rem}
+.vnx-panel p{font-size:12px;color:var(--ink2);line-height:1.6}
+
+/* Intent split filter (inside vNext panel, only active when vNext ON) */
+.vnx-intent-tabs{display:flex;gap:3px;background:rgba(255,255,255,.6);border-radius:5px;padding:2px}
+.vnx-intent-tab{padding:3px 10px;font-size:11px;font-weight:600;color:var(--ink3);border-radius:3px;cursor:pointer;border:none;background:none;font-family:var(--f);transition:all .12s}
+.vnx-intent-tab.on{background:var(--panel);color:var(--navy);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+
+/* Divergence flag */
+.vnx-diverge{display:inline-block;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;background:var(--amber-l);color:var(--amber)}
+body:not(.vnx-on) .vnx-diverge{display:none!important}
+
+/* Capital programme indicator */
+.vnx-capex-pill{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10.5px;font-weight:700;background:var(--navy-l);color:var(--navy)}
+
+/* Intensity bar */
+.vnx-int-bar{height:3px;background:var(--bg3);border-radius:2px;margin-top:3px}
+.vnx-int-fill{height:100%;border-radius:2px}
+
+/* Scope 3 split sub-lines in KPI tile */
+.vnx-co2-split{margin-top:.4rem;padding-top:.4rem;border-top:1px solid var(--rule);display:none}
+.vnx-on .vnx-co2-split{display:block}
+.vnx-co2-row{display:flex;justify-content:space-between;align-items:center;font-size:10px;margin-bottom:.15rem}
+.vnx-co2-op{color:var(--psl-d);font-weight:700}
+.vnx-co2-cap{color:var(--navy2);font-weight:700}
+
+/* Size-of-prize Capex label */
+.vnx-prize-split{font-size:10px;color:rgba(255,255,255,.55);margin-top:2px;display:none}
+.vnx-on .vnx-prize-split{display:block}
 </style>
 </head>
 <body>
@@ -452,6 +510,27 @@ body{font-family:var(--f);background:var(--bg);color:var(--ink);font-size:14px;l
     </div>
     <div style="padding:.625rem 1.125rem;background:var(--bg2);font-size:11px;color:var(--ink4)">Client 2 dataset available for internal benchmarking. Not for client demos.</div>
   </div>
+
+  <!-- vNext Toggle — SPIE V2 -->
+  <div style="display:flex;align-items:center;gap:.625rem;margin-left:auto">
+    <div class="vnx-toggle-wrap" id="vnx-toggle-wrap" onclick="toggleVNext()">
+      <div class="vnx-track" id="vnx-track"><div class="vnx-thumb" id="vnx-thumb"></div></div>
+      <span class="vnx-lbl" id="vnx-lbl">vNext <strong>OFF</strong></span>
+    </div>
+    <div style="font-size:10px;color:rgba(255,255,255,.45);max-width:140px;line-height:1.4" id="vnx-desc">Taxonomy layer inactive</div>
+  </div>
+</div>
+
+
+<!-- ══ vNext INTENT FILTER (only active when vNext ON) ══ -->
+<div id="vnx-intent-bar" style="background:var(--psl-l);border-bottom:2px solid var(--psl);padding:.375rem 1.25rem;display:none;align-items:center;gap:1rem">
+  <span style="font-size:10.5px;font-weight:700;letter-spacing:.05em;color:var(--psl-d);text-transform:uppercase">vNext — Spend intent filter</span>
+  <div class="vnx-intent-tabs">
+    <button class="vnx-intent-tab on"  onclick="setVNextIntent('all',this)">All spend</button>
+    <button class="vnx-intent-tab"     onclick="setVNextIntent('op',this)">Operational only</button>
+    <button class="vnx-intent-tab"     onclick="setVNextIntent('cap',this)">Capex only</button>
+  </div>
+  <span style="font-size:11px;color:var(--psl-d);margin-left:.5rem" id="vnx-intent-desc">All spend · Operational + Capital programme</span>
 </div>
 
 <!-- ══ LAYOUT ══ -->
@@ -592,6 +671,29 @@ body{font-family:var(--f);background:var(--bg);color:var(--ink);font-size:14px;l
 
           </div>
         </div>
+        <!-- vNext: Operational vs Capital programme summary panel -->
+        <div class="vnx-panel" id="vnx-overview-summary">
+          <div class="vnx-panel-title"><span class="vnx-badge">vNext</span> Taxonomy layer active — spend intent split</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-top:.375rem">
+            <div style="background:rgba(255,255,255,.7);border-radius:6px;padding:.625rem .75rem">
+              <div style="font-size:10px;font-weight:700;color:var(--psl-d);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.2rem">Operational spend</div>
+              <div style="font-size:18px;font-weight:800;color:var(--psl-d)" id="vnx-op-spend">£17.2M</div>
+              <div style="font-size:10.5px;color:var(--ink3)">2,168t CO₂e</div>
+            </div>
+            <div style="background:rgba(255,255,255,.7);border-radius:6px;padding:.625rem .75rem">
+              <div style="font-size:10px;font-weight:700;color:var(--navy2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.2rem">Capital programme</div>
+              <div style="font-size:18px;font-weight:800;color:var(--navy2)" id="vnx-cap-spend">£6.99M</div>
+              <div style="font-size:10.5px;color:var(--ink3)">1,734t CO₂e</div>
+            </div>
+            <div style="background:rgba(255,255,255,.7);border-radius:6px;padding:.625rem .75rem">
+              <div style="font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.2rem">Carbon concentration</div>
+              <div style="font-size:18px;font-weight:800;color:var(--amber)">8 lines</div>
+              <div style="font-size:10.5px;color:var(--ink3)">≈62% of portfolio CO₂ — all Capex</div>
+            </div>
+          </div>
+          <div style="font-size:11.5px;color:var(--ink3);margin-top:.5rem">Operational intensity: Use the intent filter above to isolate Operational and Capital programme layers.</div>
+        </div>
+
 
         <!-- Drill-down panel (appears when exec indicator clicked) -->
         <div id="exec-drill" style="display:none;background:var(--navy-l);border:2px solid var(--navy);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.25rem;position:relative">
@@ -719,7 +821,22 @@ body{font-family:var(--f);background:var(--bg);color:var(--ink);font-size:14px;l
         </div>
       <!-- INLINE CHAT -->
       <div style="margin-top:1.5rem;border-top:1px solid var(--rule);padding-top:.75rem;padding-bottom:1.5rem">
-        <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink4);margin-bottom:.375rem">Ask SPIE about this dataset</div>
+        
+      <!-- vNext: Category intelligence panel -->
+      <div class="vnx-panel" id="vnx-sec-panel" style="margin-top:.75rem">
+        <div class="vnx-panel-title"><span class="vnx-badge">vNext</span> SIC taxonomy — category reclassification active</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.375rem">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:.25rem">⚡ Divergence: Logistics &amp; Distribution</div>
+            <div style="font-size:11.5px;color:var(--ink2);line-height:1.6">2.0% of portfolio spend → 8.9% of CO₂. Carbon contribution is disproportionate to its spend share — the divergence signal flags this automatically.</div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--navy2);margin-bottom:.25rem">🏗 Construction &amp; Engineering: £6.99M Capex</div>
+            <div style="font-size:11.5px;color:var(--ink2);line-height:1.6">In vNext Construction &amp; Engineering is a separate category — distinct from Health &amp; Social Work. Switching to Operational-only intent removes it and reveals the recurring category base.</div>
+          </div>
+        </div>
+      </div>
+<div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink4);margin-bottom:.375rem">Ask SPIE about this dataset</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.375rem" id="sugg-sectors">
           <span class="sugg" onclick="ask(this.textContent)">What&#39;s changed year on year?</span>
           <span class="sugg" onclick="ask(this.textContent)">Where is supplier risk increasing?</span>
@@ -759,7 +876,22 @@ body{font-family:var(--f);background:var(--bg);color:var(--ink);font-size:14px;l
         </div>
       <!-- INLINE CHAT -->
       <div style="margin-top:1.5rem;border-top:1px solid var(--rule);padding-top:.75rem;padding-bottom:1.5rem">
-        <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink4);margin-bottom:.375rem">Ask SPIE about this dataset</div>
+        
+      <!-- vNext: Supplier intensity insight panel -->
+      <div class="vnx-panel" id="vnx-sup-panel" style="margin-top:.75rem">
+        <div class="vnx-panel-title"><span class="vnx-badge">vNext</span> Taxonomy signals active</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.375rem">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:.25rem">⚡ Intensity outlier: Supplier 009</div>
+            <div style="font-size:11.5px;color:var(--ink2);line-height:1.6">Logistics &amp; Transport — flagged with ⚡ High intensity signal. Carbon contribution is disproportionate to spend size. Visible in the signal column.</div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--navy2);margin-bottom:.25rem">🏗 Capital programme: Suppliers 001, 002, 011</div>
+            <div style="font-size:11.5px;color:var(--ink2);line-height:1.6">Construction &amp; Engineering (SIC F) · Capex-classified. No-PO flag is expected for capital contracts. Use Operational-only intent filter to see recurring supplier base without these.</div>
+          </div>
+        </div>
+      </div>
+<div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink4);margin-bottom:.375rem">Ask SPIE about this dataset</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.375rem" id="sugg-suppliers">
           <span class="sugg" onclick="ask(this.textContent)">What&#39;s changed year on year?</span>
           <span class="sugg" onclick="ask(this.textContent)">Where is supplier risk increasing?</span>
@@ -918,7 +1050,19 @@ body{font-family:var(--f);background:var(--bg);color:var(--ink);font-size:14px;l
         <div class="card"><div class="ch"><div class="ct">AP operational signals</div></div><div id="ap-signals-list" style="padding:.25rem 0"></div></div>
       <!-- INLINE CHAT -->
       <div style="margin-top:1.5rem;border-top:1px solid var(--rule);padding-top:.75rem;padding-bottom:1.5rem">
-        <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink4);margin-bottom:.375rem">Ask SPIE about this dataset</div>
+        
+      <!-- vNext: AP intent split panel -->
+      <div class="vnx-panel" id="vnx-ap-panel" style="margin-top:.75rem">
+        <div class="vnx-panel-title"><span class="vnx-badge">vNext</span> Transaction value bands — Operational vs Capital programme split</div>
+        <div style="margin-top:.375rem">
+          <div id="vnx-band-chart" style="font-size:12px;color:var(--ink2)"></div>
+          <div style="margin-top:.625rem;padding:.625rem;background:rgba(15,118,110,.08);border-radius:6px;border-left:3px solid var(--teal)">
+            <div style="font-size:11px;font-weight:700;color:var(--teal);margin-bottom:.2rem">Carbon concentration signal</div>
+            <div style="font-size:12px;color:var(--ink2)"><strong style="font-size:20px;color:var(--teal)">8 lines</strong> account for ≈62% of estimated portfolio Scope 3 carbon. All 8 are construction milestone payments (Capex). Not AP anomalies — programme-governed. In Operational-only view: carbon is distributed across 14,597 lines. No single operational line is an outlier.</div>
+          </div>
+        </div>
+      </div>
+<div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink4);margin-bottom:.375rem">Ask SPIE about this dataset</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.375rem" id="sugg-ap">
           <span class="sugg" onclick="ask(this.textContent)">What&#39;s changed year on year?</span>
           <span class="sugg" onclick="ask(this.textContent)">Where is supplier risk increasing?</span>
@@ -956,7 +1100,29 @@ body{font-family:var(--f);background:var(--bg);color:var(--ink);font-size:14px;l
         <div style="font-size:12.5px;color:var(--ink2);line-height:1.75">Equipment Hire doubled in spend (+105%) and carries a <b>0.55 tCO&#8322;e / &#163;1,000</b> intensity factor &mdash; the highest in the portfolio. Estimated Scope 3 from this sector rose from ~1,105t to ~2,263t. <b>ODN Oil BV</b> (new in 2025, &#163;761K) supplies HVO100 sustainable fuel &mdash; a supply-side decarbonisation signal within this sector. Directional signal only.</div>
       <!-- INLINE CHAT -->
       <div style="margin-top:1.5rem;border-top:1px solid var(--rule);padding-top:.75rem;padding-bottom:1.5rem">
-        <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink4);margin-bottom:.375rem">Ask SPIE about this dataset</div>
+        
+      <!-- vNext: Carbon layer insight panel -->
+      <div class="vnx-panel" id="vnx-carbon-panel" style="margin-top:.75rem">
+        <div class="vnx-panel-title"><span class="vnx-badge">vNext</span> Taxonomy classification active — Operational/Capex split</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-top:.375rem">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--psl-d);margin-bottom:.2rem">Operational carbon</div>
+            <div style="font-size:16px;font-weight:800;color:var(--psl-d)">2,168t</div>
+            <div style="font-size:10.5px;color:var(--ink3)">Addressable via category strategy and supplier selection</div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--navy2);margin-bottom:.2rem">Capital programme carbon</div>
+            <div style="font-size:16px;font-weight:800;color:var(--navy2)">1,734t</div>
+            <div style="font-size:10.5px;color:var(--ink3)">Determined by programme specification and contractor selection</div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:.2rem">Highest operational intensity</div>
+            <div style="font-size:16px;font-weight:800;color:var(--amber)">Highest category</div>
+            <div style="font-size:10.5px;color:var(--ink3)">Logistics &amp; Distribution — Scope 3 Fuel</div>
+          </div>
+        </div>
+      </div>
+<div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink4);margin-bottom:.375rem">Ask SPIE about this dataset</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.375rem" id="sugg-carbon">
           <span class="sugg" onclick="ask(this.textContent)">What&#39;s changed year on year?</span>
           <span class="sugg" onclick="ask(this.textContent)">Where is supplier risk increasing?</span>
@@ -2348,7 +2514,503 @@ buildCharts('overview');
 chartsBuilt['overview'] = true;
 initSiteSelector();
 
+
+/* ══════════════════════════════════════════════════════════════════════
+   SPIE V2 — vNext Layer
+   All vNext logic is additive. No existing functions are replaced.
+   vNext state: window.vnextOn (bool), window.vnextIntent ('all'|'op'|'cap')
+   ══════════════════════════════════════════════════════════════════════ */
+
+window.vnextOn     = false;
+window.vnextIntent = 'all';
+
+/* ── vNext taxonomy data ──────────────────────────────────────────────
+   Derived from DS.sic + taxonomy product logic.
+   Key additions: intent, vnextCat, intensity per SIC section.
+   ──────────────────────────────────────────────────────────────────── */
+var VNX_SIC_INTENT = {
+  'F': {intent:'Capex',       cat:'Construction & Engineering',     intensity:248, ghg:'Scope 3 Cat 1'},
+  'Q': {intent:'Operational', cat:'Social Care & Housing',          intensity:24,  ghg:'Scope 3 Cat 1'},
+  'G': {intent:'Operational', cat:'Manufacturing / Processing',     intensity:162, ghg:'Scope 3 Cat 1'},
+  'N': {intent:'Operational', cat:'Admin & Support Services',       intensity:94,  ghg:'Scope 3 Cat 1'},
+  'C': {intent:'Operational', cat:'Manufacturing / Processing',     intensity:282, ghg:'Scope 3 Cat 1'},
+  'J': {intent:'Operational', cat:'ICT',                            intensity:132, ghg:'Scope 3 Cat 1'},
+  'M': {intent:'Operational', cat:'Professional Services',          intensity:88,  ghg:'Scope 3 Cat 1'},
+  'K': {intent:'Operational', cat:'Finance',                        intensity:19,  ghg:'Scope 3 Cat 1'},
+  'S': {intent:'Operational', cat:'Other Services',                 intensity:155, ghg:'Scope 3 Cat 1'},
+  'H': {intent:'Mixed',       cat:'Logistics, Transport & Couriers',intensity:709, ghg:'Scope 3 Fuel'},
+  'E': {intent:'Mixed',       cat:'Energy & Utilities',             intensity:187, ghg:'Scope 2'},
+  '':  {intent:'Operational', cat:'Unclassified',                   intensity:160, ghg:'Scope 3 Cat 1'},
+};
+
+/* Portfolio-level vNext figures (from SPIE_vNext_Concept) */
+var VNX_PORTFOLIO = {
+  op_spend:   17198103,   cap_spend:   6992918,
+  op_co2:     2168,       cap_co2:     1734,
+  op_int:     126,        cap_int:     248,
+  concentration_lines: 8, concentration_pct: 62,
+};
+
+/* AP band split (from SPIE_vNext_Concept) */
+var VNX_BANDS = [
+  {label:'< £1K',       total:11583, op:11583, cap:0},
+  {label:'£1K–£10K',   total:2267,  op:2267,  cap:0},
+  {label:'£10K–£50K',  total:541,   op:487,   cap:54},
+  {label:'£50K–£200K', total:173,   op:130,   cap:43},
+  {label:'> £200K',    total:33,    op:10,    cap:23},
+];
+
+/* ── toggleVNext — master switch ─────────────────────────────────────── */
+function toggleVNext() {
+  window.vnextOn = !window.vnextOn;
+  var on = window.vnextOn;
+
+  /* Toggle switch visuals */
+  document.getElementById('vnx-track').classList.toggle('on', on);
+  document.getElementById('vnx-toggle-wrap').classList.toggle('on', on);
+  var lbl = document.getElementById('vnx-lbl');
+  lbl.classList.toggle('on', on);
+  lbl.innerHTML = 'vNext <strong>' + (on ? 'ON' : 'OFF') + '</strong>';
+  document.getElementById('vnx-desc').textContent = on
+    ? 'Taxonomy layer active'
+    : 'Taxonomy layer inactive';
+
+  /* Intent filter bar */
+  var bar = document.getElementById('vnx-intent-bar');
+  if (bar) bar.style.display = on ? 'flex' : 'none';
+
+  /* Body class for CSS-driven visibility */
+  document.body.classList.toggle('vnx-on', on);
+
+  /* Refresh active view */
+  refreshCurrentView();
+}
+
+/* ── setVNextIntent — intent filter ─────────────────────────────────── */
+function setVNextIntent(val, el) {
+  window.vnextIntent = val;
+  document.querySelectorAll('.vnx-intent-tab').forEach(function(t) { t.classList.remove('on'); });
+  el.classList.add('on');
+  var descMap = {
+    all: 'All spend · Operational + Capital programme',
+    op:  'Operational only · excl. capital programme',
+    cap: 'Capital programme only',
+  };
+  var desc = document.getElementById('vnx-intent-desc');
+  if (desc) desc.textContent = descMap[val];
+  /* Reset then re-apply so intent filter recalculates all numbers */
+  vnxResetEnhancements();
+  refreshCurrentView();
+  setTimeout(function() { vnxApplyAll(); }, 80);
+}
+
+/* ── getVNxIntent — resolved intent respecting filter ───────────────── */
+function getVNxResolvedIntent(s) {
+  var sic = s.sic || '';
+  var base = VNX_SIC_INTENT[sic] || VNX_SIC_INTENT[''];
+  var intent = base.intent;
+
+  /* Mixed override: Test 1 — project flag in budget_code */
+  if (intent === 'Mixed') {
+    var bc = (s.budget_code || '').toLowerCase();
+    var capexKeywords = ['construction','build','capex','fit out','refurb','new build','development'];
+    if (capexKeywords.some(function(k){ return bc.indexOf(k) >= 0; })) {
+      intent = 'Capex';
+    } else if ((s.lines || 0) < 3) {
+      intent = 'Capex';  /* Test 2: recurrence */
+    } else {
+      intent = 'Operational';  /* Default */
+    }
+  }
+  return intent;
+}
+
+/* ── vnxSupplierVisible — should a supplier show under current filter ─ */
+function vnxSupplierVisible(s) {
+  if (!window.vnextOn || window.vnextIntent === 'all') return true;
+  var intent = getVNxResolvedIntent(s);
+  if (window.vnextIntent === 'op')  return intent === 'Operational';
+  if (window.vnextIntent === 'cap') return intent === 'Capex';
+  return true;
+}
+
+/* ── vnxEnhanceSupplierTable — patches existing supplier table ─────── */
+function vnxEnhanceSupplierTable() {
+  if (!window.vnextOn) return; /* only runs when vNext ON */
+
+  var tbl = document.getElementById('t-suppliers');
+  if (!tbl) return;
+
+  var thead = tbl.querySelector('thead');
+  if (!thead) return;
+
+  /* Add vNext column headers if not already added */
+  var headerRow = thead.querySelector('tr');
+  if (!headerRow) return;
+
+  /* Check if vNext headers already present */
+  if (headerRow.querySelector('.vnx-th')) return;
+
+  /* Insert Intent header after Sector col (index 2) */
+  var headers = headerRow.querySelectorAll('th');
+
+  /* Add: Intent, Intensity (kg/£1K), GHG type after existing Signal col */
+  var thIntent = document.createElement('th');
+  thIntent.className = 'vnx-col vnx-th';
+  thIntent.innerHTML = 'Intent <span class="vnx-badge">vNext</span>';
+  headerRow.insertBefore(thIntent, headers[headers.length - 1]); /* before Signal */
+
+  var thGhg = document.createElement('th');
+  thGhg.className = 'vnx-col vnx-th';
+  thGhg.innerHTML = 'GHG type <span class="vnx-badge">vNext</span>';
+  headerRow.insertBefore(thGhg, headers[headers.length - 1]);
+
+  /* Enhance each body row */
+  var rows = tbl.querySelectorAll('tbody tr');
+  rows.forEach(function(row, i) {
+    if (row.querySelector('.vnx-td')) return; /* already enhanced */
+
+    /* Get supplier data */
+    var sups = typeof DS !== 'undefined' && DS.suppliers ? DS.suppliers : [];
+    var s = sups[i];
+    if (!s) return;
+
+    var sic = s.sic || '';
+    var taxData = VNX_SIC_INTENT[sic] || VNX_SIC_INTENT[''];
+    var intent = getVNxResolvedIntent(s);
+    var intentBadge = intent === 'Capex'
+      ? '<span class="vnx-capex-pill">🏗 Capex</span>'
+      : '<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:10.5px;font-weight:700;background:var(--psl-l);color:var(--psl-d)">Operational</span>';
+
+    var intensity = taxData.intensity;
+    var maxInt = 800;
+    var iw = Math.min(100, (intensity / maxInt * 100)).toFixed(0);
+    var icol = intensity >= 400 ? 'var(--amber)' : intent === 'Capex' ? 'var(--navy2)' : 'var(--psl)';
+
+    var cells = row.querySelectorAll('td');
+    var signalCell = cells[cells.length - 1]; /* last = signal */
+
+    /* Intent cell */
+    var tdIntent = document.createElement('td');
+    tdIntent.className = 'vnx-col vnx-td';
+    tdIntent.innerHTML = intentBadge;
+    row.insertBefore(tdIntent, signalCell);
+
+    /* GHG type cell */
+    var tdGhg = document.createElement('td');
+    tdGhg.className = 'vnx-col vnx-td';
+    tdGhg.innerHTML = '<span style="font-size:11px;color:var(--ink3)">' + taxData.ghg + '</span>';
+    row.insertBefore(tdGhg, signalCell);
+
+    /* Add high-intensity signal to existing signal cell if applicable */
+    if (intensity >= 400) {
+      signalCell.innerHTML += ' <span class="pill p-amber" style="margin-top:2px">⚡ High intensity</span>';
+    }
+    if (intent === 'Capex') {
+      signalCell.innerHTML += ' <span class="pill p-navy" style="margin-top:2px">🏗 Capital</span>';
+    }
+
+    /* Hide row if filtered out by intent */
+    row.style.display = vnxSupplierVisible(s) ? '' : 'none';
+  });
+}
+
+/* ── vnxEnhanceSectorTable — patches existing sector table ─────────── */
+function vnxEnhanceSectorTable() {
+  if (!window.vnextOn) return;
+
+  var tbl = document.getElementById('t-sectors');
+  if (!tbl) return;
+
+  var thead = tbl.querySelector('thead');
+  if (!thead) return;
+  var headerRow = thead.querySelector('tr');
+  if (!headerRow || headerRow.querySelector('.vnx-th')) return;
+
+  /* Add: Intent, Divergence column headers (no intensity ratio) */
+  var thIntent = document.createElement('th');
+  thIntent.className = 'vnx-col vnx-th';
+  thIntent.innerHTML = 'Intent <span class="vnx-badge">vNext</span>';
+  headerRow.appendChild(thIntent);
+
+  var thDiv = document.createElement('th');
+  thDiv.className = 'vnx-col vnx-th';
+  thDiv.innerHTML = 'Divergence <span class="vnx-badge">vNext</span>';
+  headerRow.appendChild(thDiv);
+
+  /* Map category names to vNext data */
+  var catMap = {};
+  if (typeof DS !== 'undefined' && DS.sic) {
+    DS.sic.forEach(function(sec) {
+      var txData = VNX_SIC_INTENT[sec.sec] || {};
+      var pslCat = sec.pslCat || 'Unclassified';
+      if (!catMap[pslCat]) {
+        catMap[pslCat] = {spend:0, co2:0, intensity:txData.intensity||160, intent:txData.intent||'Operational'};
+      }
+      catMap[pslCat].spend += sec.spend || 0;
+      catMap[pslCat].co2   += sec.co2   || 0;
+    });
+  }
+
+  /* Total portfolio CO2 for divergence calc */
+  var totalCo2   = Object.values(catMap).reduce(function(a,c){ return a+c.co2; }, 0) || 1;
+  var totalSpend = Object.values(catMap).reduce(function(a,c){ return a+c.spend; }, 0) || 1;
+
+  /* Enhance body rows */
+  var rows = tbl.querySelectorAll('tbody tr');
+  rows.forEach(function(row) {
+    if (row.querySelector('.vnx-td')) return;
+    /* Get category name from first cell */
+    var nameCells = row.querySelectorAll('td');
+    if (!nameCells.length) return;
+    var nameEl = nameCells[0].querySelector('.rname') || nameCells[0];
+    var catName = nameEl.textContent.trim();
+    var data = catMap[catName] || {spend:0, co2:0, intensity:160, intent:'Operational'};
+
+    var intensity = data.intensity;
+    var maxInt    = 800;
+    var iw = Math.min(100, (intensity/maxInt*100)).toFixed(0);
+    var icol = intensity >= 400 ? 'var(--amber)' : data.intent === 'Capex' ? 'var(--navy2)' : 'var(--psl)';
+
+    var spendPct = data.spend / totalSpend * 100;
+    var co2Pct   = data.co2   / totalCo2   * 100;
+    var diverge  = co2Pct > spendPct * 2;
+
+    /* Intent cell (no intensity ratio shown — removed) */
+    var tdIntent = document.createElement('td');
+    tdIntent.className = 'vnx-col vnx-td';
+    tdIntent.innerHTML = data.intent === 'Capex'
+      ? '<span class="vnx-capex-pill">🏗 Capex</span>'
+      : '<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:10.5px;font-weight:700;background:var(--psl-l);color:var(--psl-d)">Operational</span>';
+    row.appendChild(tdIntent);
+
+    /* Divergence cell */
+    var tdDiv = document.createElement('td');
+    tdDiv.className = 'vnx-col vnx-td';
+    tdDiv.innerHTML = diverge
+      ? '<span class="vnx-diverge">⚡ High carbon divergence</span>'
+      : '<span style="color:var(--ink4);font-size:11px">—</span>';
+    row.appendChild(tdDiv);
+
+    /* Filter row by intent */
+    var rowIntent = window.vnextIntent;
+    if (rowIntent === 'op'  && data.intent === 'Capex')       row.style.display = 'none';
+    if (rowIntent === 'cap' && data.intent !== 'Capex')       row.style.display = 'none';
+  });
+}
+
+/* ── vnxRenderBandChart — AP band chart with intent split ──────────── */
+function vnxRenderBandChart() {
+  var container = document.getElementById('vnx-band-chart');
+  if (!container) return;
+
+  var intent = window.vnextIntent;
+  var maxLines = Math.max.apply(null, VNX_BANDS.map(function(b){ return b.total; }));
+  var html = '';
+
+  VNX_BANDS.forEach(function(b) {
+    var visOp   = intent !== 'cap' ? b.op  : 0;
+    var visCap  = intent !== 'op'  ? b.cap : 0;
+    var total   = visOp + visCap;
+    var opPct   = (visOp  / maxLines * 100).toFixed(1);
+    var capPct  = (visCap / maxLines * 100).toFixed(1);
+    var capLbl  = b.cap > 0 && intent !== 'op'
+      ? '<span style="color:var(--navy2);font-weight:600">' + b.cap + ' Capex</span> · '
+      : '';
+
+    html += '<div style="display:flex;align-items:center;gap:.625rem;padding:.35rem 0;border-bottom:1px solid var(--rule)">'
+      + '<span style="width:100px;font-size:12px;font-weight:600;color:var(--ink2);flex-shrink:0">' + b.label + '</span>'
+      + '<div style="flex:1;height:18px;background:var(--bg3);border-radius:3px;overflow:hidden;display:flex;gap:1px">'
+      + '<div style="height:100%;background:var(--psl);opacity:.8;width:' + opPct + '%;transition:width .3s"></div>'
+      + '<div style="height:100%;background:var(--navy2);opacity:.8;width:' + capPct + '%;transition:width .3s"></div>'
+      + '</div>'
+      + '<span style="width:160px;font-size:11px;color:var(--ink3);text-align:right;flex-shrink:0">'
+      + capLbl + '<span style="color:var(--ink2)">' + total.toLocaleString() + ' lines</span></span>'
+      + '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
+/* ── vnxEnhanceKPIStrip — adds sub-lines to Scope 3 tile ──────────── */
+function vnxEnhanceKPIStrip() {
+  if (!window.vnextOn) return;
+  var krow = document.getElementById('krow-overview');
+  if (!krow) return;
+  var kpis = krow.querySelectorAll('.kpi');
+  var scope3Tile = null;
+  kpis.forEach(function(k) { if (k.classList.contains('teal')) scope3Tile = k; });
+  if (!scope3Tile) return;
+
+  /* Remove old split before re-rendering with current intent */
+  var old = scope3Tile.querySelector('.vnx-co2-split');
+  if (old) old.remove();
+
+  var frac   = (typeof getActiveFraction === 'function') ? getActiveFraction() : 1;
+  var intent = window.vnextIntent;
+  var opCo2  = Math.round(VNX_PORTFOLIO.op_co2  * frac);
+  var capCo2 = Math.round(VNX_PORTFOLIO.cap_co2 * frac);
+  var opRow  = intent === 'cap' ? '' :
+    '<div class="vnx-co2-row"><span style="font-size:10px;color:var(--ink3)">Operational</span>'
+    + '<span class="vnx-co2-op" id="vnx-co2-op-val">' + opCo2.toLocaleString() + 't</span></div>';
+  var capRow = intent === 'op' ? '' :
+    '<div class="vnx-co2-row"><span style="font-size:10px;color:var(--ink3)">Capital prog.</span>'
+    + '<span class="vnx-co2-cap" id="vnx-co2-cap-val">' + capCo2.toLocaleString() + 't</span></div>';
+
+  var split = document.createElement('div');
+  split.className = 'vnx-co2-split';
+  split.innerHTML = opRow + capRow;
+  scope3Tile.appendChild(split);
+}
+
+/* ── vnxApplyAll — runs all vNext enhancements on current view ─────── */
+function vnxApplyAll() {
+  if (!window.vnextOn) return;
+  vnxEnhanceKPIStrip();
+  vnxUpdateOverviewPanel();
+
+  var activeView = document.querySelector('.view.on');
+  if (!activeView) return;
+  var id = activeView.id.replace('v-', '');
+
+  if (id === 'suppliers') { vnxEnhanceSupplierTable(); }
+  if (id === 'sectors')   { vnxEnhanceSectorTable();   }
+  if (id === 'ap')        { vnxRenderBandChart();       }
+}
+
+/* Update the overview summary panel numbers based on current intent */
+function vnxUpdateOverviewPanel() {
+  var intent = window.vnextIntent;
+  var fM = function(v){ return v>=1e6?'£'+(v/1e6).toFixed(2)+'M':v>=1000?'£'+(v/1e3).toFixed(0)+'K':'£'+Math.round(v); };
+  /* Figures scaled by active site fraction */
+  var frac   = (typeof getActiveFraction === 'function') ? getActiveFraction() : 1;
+  var opSpend  = Math.round(VNX_PORTFOLIO.op_spend  * frac);
+  var capSpend = Math.round(VNX_PORTFOLIO.cap_spend * frac);
+  var opCo2    = Math.round(VNX_PORTFOLIO.op_co2    * frac);
+  var capCo2   = Math.round(VNX_PORTFOLIO.cap_co2   * frac);
+
+  var opEl  = document.getElementById('vnx-op-spend');
+  var capEl = document.getElementById('vnx-cap-spend');
+  if (intent === 'op') {
+    if (opEl)  opEl.textContent  = fM(opSpend);
+    if (capEl) { capEl.textContent = '—'; capEl.style.color = 'var(--ink4)'; }
+  } else if (intent === 'cap') {
+    if (opEl)  { opEl.textContent  = '—'; opEl.style.color  = 'var(--ink4)'; }
+    if (capEl) { capEl.textContent = fM(capSpend); capEl.style.color = 'var(--navy2)'; }
+  } else {
+    if (opEl)  { opEl.textContent  = fM(opSpend);  opEl.style.color  = 'var(--psl-d)'; }
+    if (capEl) { capEl.textContent = fM(capSpend); capEl.style.color = 'var(--navy2)'; }
+  }
+  /* Update co2 sub-lines in panel */
+  var opCo2El  = document.getElementById('vnx-panel-op-co2');
+  var capCo2El = document.getElementById('vnx-panel-cap-co2');
+  if (opCo2El)  opCo2El.textContent  = intent==='cap' ? '—' : opCo2.toLocaleString()+'t CO₂e';
+  if (capCo2El) capCo2El.textContent = intent==='op'  ? '—' : capCo2.toLocaleString()+'t CO₂e';
+}
+
+/* ── vnxResetEnhancements — clears vNext columns when toggled OFF ──── */
+function vnxResetEnhancements() {
+  /* Remove vNext table columns from supplier table */
+  document.querySelectorAll('.vnx-th, .vnx-td').forEach(function(el) { el.remove(); });
+  /* Remove vNext co2-split from KPI tile */
+  document.querySelectorAll('.vnx-co2-split').forEach(function(el) { el.remove(); });
+  /* Show all supplier rows */
+  var supRows = document.querySelectorAll('#t-suppliers tbody tr');
+  supRows.forEach(function(r){ r.style.display = ''; });
+  /* Clear band chart */
+  var bc = document.getElementById('vnx-band-chart');
+  if (bc) bc.innerHTML = '';
+}
+
+/* ── Hook into buildKPIStrip to apply intent filter to all 6 tiles ───── */
+var _origBuildKPIStrip = buildKPIStrip;
+buildKPIStrip = function() {
+  _origBuildKPIStrip.apply(this, arguments);
+  if (!window.vnextOn) return;
+
+  var intent = window.vnextIntent;
+  if (intent === 'all') {
+    /* No tile override needed — just add the Scope 3 split sub-lines */
+    vnxEnhanceKPIStrip();
+    return;
+  }
+
+  /* Recalculate tile values filtered to Operational or Capex layer */
+  var frac = (typeof getActiveFraction === 'function') ? getActiveFraction() : 1;
+  var fM   = function(v){ return v>=1e6?'£'+(v/1e6).toFixed(2)+'M':v>=1000?'£'+(v/1e3).toFixed(0)+'K':'£'+v; };
+
+  /* Portfolio split figures scaled by active site fraction */
+  var opSpend  = Math.round(VNX_PORTFOLIO.op_spend  * frac);
+  var capSpend = Math.round(VNX_PORTFOLIO.cap_spend * frac);
+  var opCo2    = Math.round(VNX_PORTFOLIO.op_co2    * frac);
+  var capCo2   = Math.round(VNX_PORTFOLIO.cap_co2   * frac);
+
+  /* Operational lines: all site lines are operational (capital = ~76 lines portfolio-wide) */
+  var activeSites = DS.sites.filter(function(s){ return selectedSites.has(s.code); });
+  var totalLines  = activeSites.reduce(function(a,s){ return a+s.lines; }, 0);
+  var opLines     = totalLines - 76;   /* subtract known Capex milestone lines */
+  var capLines    = 76;
+
+  var isOp  = intent === 'op';
+  var spend = isOp ? opSpend  : capSpend;
+  var lines = isOp ? opLines  : capLines;
+  var co2   = isOp ? opCo2   : capCo2;
+  /* Supplier / site counts: approximate — Capex involves ~4 sites, ~83 suppliers */
+  var sups  = isOp ? Math.round(activeSites.reduce(function(a,s){return a+s.sups;},0) - 83)
+                   : 83;
+  var sites = isOp ? activeSites.length : 4;
+  var label = isOp ? 'Operational only' : 'Capital programme';
+
+  /* Overwrite the six tiles with intent-filtered values */
+  var kr = document.getElementById('krow-overview');
+  if (!kr) return;
+  kr.innerHTML = '';
+  var tiles = [
+    {l:'Total spend',      v:fM(spend),            s:label,                       d:sites+' sites',              c:'up'},
+    {l:'Invoice lines',    v:lines.toLocaleString(),s:'Transactions — '+label,    d:lines>0?'£'+Math.round(spend/lines)+' avg':'',  c:'up'},
+    {l:'Active suppliers', v:sups.toLocaleString(), s:label,                       d:'',                           c:'up'},
+    {l:'Active sites',     v:sites,                 s:'of '+DS.sites.length+' total', d:'',                       c:'up'},
+    {l:'No-PO exposure',   v:DS.summary.noPoPct+'%',s:'of invoice lines',          d:'Portfolio-wide signal',     c:'dn'},
+    {l:'Est. Scope 3',     v:co2.toLocaleString()+'t', s:label+' CO₂e',           d:'Spend-based proxy',         c:'teal'},
+  ];
+  tiles.forEach(function(k){
+    kr.innerHTML += '<div class="kpi '+k.c+'">'
+      + '<div class="kl">'+k.l+'<span class="vnx-badge" style="margin-left:4px">vNext</span></div>'
+      + '<div class="kv">'+k.v+'</div>'
+      + '<div class="ks">'+k.s+'</div>'
+      + (k.d ? '<div class="kd">'+k.d+'</div>' : '')
+      + '</div>';
+  });
+  /* Add the Scope 3 sub-line (only relevant for 'all', but run anyway for consistency) */
+  vnxEnhanceKPIStrip();
+};
+var _origRefreshCurrentView = refreshCurrentView;
+refreshCurrentView = function() {
+  /* Reset vNext enhancements before rebuild (removes stale cols) */
+  if (!window.vnextOn) {
+    vnxResetEnhancements();
+  }
+  _origRefreshCurrentView.apply(this, arguments);
+  /* Re-apply vNext enhancements after SPIE has rebuilt the view */
+  if (window.vnextOn) {
+    setTimeout(function() { vnxApplyAll(); }, 20);
+  }
+};
+
+/* Also hook into the existing nav() to apply vNext after navigation */
+var _origNav = nav;
+nav = function(id, el) {
+  if (!window.vnextOn) vnxResetEnhancements();
+  _origNav.apply(this, arguments);
+  if (window.vnextOn) {
+    setTimeout(function() { vnxApplyAll(); }, 80);
+  }
+};
+/* ════════════════════════════════════════════
+   SPIE DEMO — Anonymised dataset (KHC)
+   Single active dataset from demo
+   Period: 2024-25 full year
+════════════════════════════════════════════ */
 </script>
 </body>
 </html>
-
