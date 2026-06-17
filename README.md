@@ -1,179 +1,207 @@
-# Procurement Spend Intelligence Engine — v0.4
+SPIE — Spend Procurement Intelligence Engine
 
-**Built by PSL · Analyst-operated · Not self-serve**
+Version: Demo V3 / KHC 2024–25
 
-A structured spend analysis tool for procurement practitioners. Takes raw invoice line data and produces a verified, heuristic-driven analysis with a full audit trail, data quality signals, and a sequenced action plan. Designed to support expert judgement, not replace it.
+Status: MVP — Ready for KHC demonstration
 
----
+Maintainer: PSL Product Team Weds 17th June 2026
 
-## What it does
 
-Accepts an ERP/P2P invoice export and runs six independent verification checks before producing any analysis. Once verified, it applies six embedded procurement heuristics to identify commercial opportunities — with explicit separation of evidence, assumptions, and validation requirements for each finding.
+What is SPIE?
 
-Outputs include:
+SPIE is a portable spend intelligence platform delivered as a single self-contained HTML file. It transforms a raw invoice export (Workday, SAP, Oracle, COINS) into a full analytics suite that runs entirely in the browser — no server, no database, no installation, no internet connection required.
 
-- Verified spend overview (totals, supplier counts, invoice lines)
-- Six heuristic analyses with confidence levels and effort ratings
-- A full logistics audit with false-positive classification and audit trail
-- Data quality signals mapped to procurement maturity indicators
-- A sequenced action plan with owners, horizons, and saving estimates
-- An executive five-slide narrative and email-ready summary
-- A spend cube (Supplier × Category × Time)
+Open the file. That's it.
 
----
 
-## Who it is for
+Files
 
-PSL analysts running initial spend analysis for procurement clients. It is not a self-serve product. Every output that could mislead — price variance, embedded logistics, unclassified spend — is either disabled or flagged for analyst review before client presentation.
+FilePurposeSPIE_KHC_2425.htmlKHC 2024–25 full dataset · real supplier names · client delivery onlySPIE_Demo_V3.htmlKHC 2024–25 dataset · anonymised suppliers · safe for prospect demosSPIE-demo.htmlClean base template with synthetic data · use this as the rebuild source for new clientsCategory_Mapping_file.xlsxCompanies House SIC taxonomy mapping · 1,600 suppliersREADME.mdThis file
 
----
 
-## Current version: v0.4
+⚠️ SPIE_KHC_2425.html contains real client data. Keep in a private repository. Never commit to a public repo.
 
-Tested against a £59.2M dataset — 18,703 invoice lines, 732 suppliers, four geographic regions.
 
-### What's in v0.4
 
-- Six verification checks with independent re-run formulas
-- Six heuristics covering: site-by-site behaviour, year-on-year trend, supplier consolidation, price variance, order batching, logistics efficiency
-- Price variance (H4) auto-disables when unit price data is corrupted — protects against false conclusions in supplier conversations
-- Logistics keyword audit with false-positive detection (milestone payment terms excluded from freight figures)
-- Data quality section mapped to procurement maturity signals
-- Full action plan with saving estimates, owners, horizons, and data requirements
-- Executive narrative (five slides + email summary)
-- Spend cube with category and supplier breakdown
 
-### Known limitations in v0.4
+Architecture
 
-- No site/cost centre dimension — site-by-site heuristic (H1) cannot be completed without ERP cost centre extract
-- No prior year data — year-on-year analysis is directional only
-- Price variance (H4) is disabled if unit prices contain errors below £0.01 — requires AP data correction before re-enabling
-- Category classification relies on client's P2P system — 61% unclassified spend is common in first-pass datasets
-- Saving estimates are heuristic-based, not audited — must not be reported as confirmed savings without validation
+Single-file delivery
 
----
+Everything — data, charts, taxonomy, logic, branding — is embedded in one .html file (~1.4MB). The file is completely self-contained:
 
-## How to run
 
-1. Export invoice line data from ERP/P2P in standard format (one row per line, columns: SupplierName, SupplierReference, Description, Sum of Gross, Sum of Vat, Sum of Quantity, Date)
-2. Open the tool and load the dataset
-3. Six verification checks run automatically — review before proceeding
-4. Work through heuristics in sequence — read the evidence, assumptions, and validation requirements for each before drawing conclusions
-5. Complete the logistics audit manually — confirm false-positive exclusions
-6. Review data quality signals — address blockers (unit prices, cost centres) before commercial conversations
-7. Generate executive output — adapt client name, year, and date fields
+Chart.js 4.4.1 — embedded inline (no CDN)
+Google Fonts — removed; falls back to Segoe UI / system-ui
+No blob URLs — all exports use data: URIs for Edge/file:// compatibility
+No external requests — works offline, from SharePoint, from email
 
----
 
-## Verification checks
+Script block structure
 
-Six checks run against source data before any analysis. All must pass.
+The file has 3 <script> blocks:
 
-| Check | Method |
-|-------|--------|
-| Total gross spend | Pivot sum — exact match required |
-| Invoice line count | Row count — exact match required |
-| Unique supplier count | DISTINCTCOUNT on SupplierName |
-| Zero-VAT share | SUMIF where VAT=0 ÷ total gross |
-| Top 10 supplier share | Sort desc, sum top 10 ÷ grand total |
-| Embedded logistics spend | Keyword match: delivery / carriage / freight / transport / shipping |
+BlockContents0Chart.js 4.4.1 (inline, 205KB)1AP_DATA, CARBON_DATA, legacy initAP, navV helper2All SPIE logic: DS, AP, buildCharts, extensions, initAPInsight
 
-Re-run formulas are provided inside the tool for independent verification.
+Data objects
 
----
+DS.summary    — total spend, lines, suppliers, sites, noPoPct, co2, avgLine
+DS.months     — ['2024-09', '2024-10', ...] full YYYY-MM format (16 months)
+DS.months_short — ['09','10',...] MM format for chart labels
+DS.monthly    — [{m:'2024-09', v:2106.52}, ...] monthly spend
+DS.monthly25  — [spend per month array]
+DS.sups       — 1,358 supplier entries (see fields below)
+DS.sites      — 51 site entries {code, spend, lines, sups, co2, pct}
+DS.sectors    — 18 CH category entries {name, v25, v24, co2, cls}
 
-## The six heuristics
+AP.totalLines, noPOLines, exactDupLines, exactDupValue
+AP.outstandingBalance, outstandingLines
+AP.roundInvoiceCount, roundInvoiceValue
+AP.singleUseSuppliers, singleUseSpend
+AP.monthly25  — [lines per month, 16 values]
+AP.credits25  — [credit £ value per month, 16 values]
+AP.hours      — [{h:0, v:2964}, ...] 24-entry hour distribution
+AP.dow        — [{d:'Mon', v:51412}, ...] day-of-week distribution
+AP.tx_bands   — {labels:[...], v25:[...]} transaction value bands
+AP.peak_hour_pct, AP.zero_vat_pct24, AP.zero_vat_pct25
 
-Each heuristic is structured as: trigger → evidence → assumptions → validation required → data needed → indicative saving range.
+DS.sups fields
 
-| # | Heuristic | Typical impact | Typical effort |
-|---|-----------|----------------|----------------|
-| H1 | Site-by-site spend behaviour | High | 90+ days — needs ERP cost centres |
-| H2 | Year-on-year spend trend | Medium | 0–30 days — needs prior year data |
-| H3 | Supplier consolidation | High | 90+ days |
-| H4 | Same supplier, different prices | High | 30–90 days — **auto-disabled if data corrupted** |
-| H5 | Order consolidation and batching | Medium | 0–30 days — fastest implementable action |
-| H6 | Delivery and logistics efficiency | Medium | 30–90 days |
+json{
+  "name": "Brakes Bros Ltd",
+  "spend": 46003693.5,
+  "co2": 9660.8,
+  "lines": 18234,
+  "sites": 47,
+  "po_pct": 82.3,
+  "sic": "G",
+  "psl_cat": "Wholesale & Retail Trade",
+  "budget_code": "Food",
+  "scope": "Scope 3",
+  "pct": 24.63
+}
 
-H4 disables automatically when unit prices below £0.01 are detected. This is intentional — presenting price variance from corrupted data in client conversations destroys credibility. The heuristic re-enables once data is corrected.
+CH Taxonomy
 
----
+javascript// SIC section letter → CH Supplier Category
+var CH_CAT_MAP = {
+  'F': 'Construction',
+  'G': 'Wholesale & Retail Trade',
+  'Q': 'Human Health & Social Work Activities',
+  // ... 18 categories total
+};
 
-## Logistics audit
+// Helper — always use this, never s.psl_cat directly
+function getChCat(s) { return CH_CAT_MAP[s.sic] || 'Other'; }
 
-The logistics section runs a keyword search across invoice descriptions (delivery, carriage, freight, transport, shipping) and then requires analyst review to identify false positives — typically milestone payment terms that contain the word "delivery" as a commercial condition, not a freight charge.
 
-The tool distinguishes:
+Navigation Tabs
 
-- **Genuine embedded freight** — delivery charges within non-logistics supplier invoices
-- **False positives** — milestone payment terms, receipt acknowledgements, project service bundles
-- **Direct logistics category** — IFS Courier and equivalent direct logistics suppliers
+Tabnav() idData sourceKey featuresOverviewoverviewDS.summary + DS.monthly6 KPI tiles · monthly spend trend · site selectorSpend by SectorsectorsDS.sups → grouped by CH CategoryDonut · bar · sortable table · 4 taxonomy filtersSupplier SignalssuppliersDS.sups (all 1,358)Sortable table · CH Category/Description/SIC/Scope filtersYear-on-YearyoyDS.sectors + AP_DATASector movement · transaction bandsAP AnalysisapAP object6 KPI tiles · 5 charts · operational signalsAP InsightapinsightAP + DS.supsAging balance · DPO table · No-PO exposure · exception donut · cycle timeCarbon / Scope 3carbonDS.sups co2CO₂e by sector and supplierSites & DeptssitesDS.sites (51)Ranked table · bar · donut · scatterRaw DatarawdataDS.sups (1,358 rows)Sortable · filterable · CSV exportDecisionsdecisionsDS.summaryAction log · programme tracker
 
-The genuine embedded freight figure and the direct logistics category total are kept separate. A combined indicative total is provided but marked as requiring analyst validation.
 
----
+Key Functions
 
-## Data quality signals
+javascript// Navigation
+nav(id, el)                    // Switch to view, rebuild charts
+navV(id, el, idx)              // Alias used by some sidebar items
 
-Data gaps are treated as procurement maturity signals, not errors to fix before analysis starts. The tool maps each gap to its likely cause and the action required.
+// Filtering
+getActiveFraction()            // Site selection fraction (0–1)
+getDateFraction()              // Date range fraction (0–1)
+getActiveSectors()             // DS.sectors scaled by site fraction
+getActiveTotal()               // Total spend for selected sites
 
-Key signals in v0.4:
+// Taxonomy
+getChCat(s)                    // SIC letter → CH Supplier Category
+initTaxFilters()               // Populate all taxonomy dropdowns from DS.sups
 
-| Signal | Likely cause | Impact on analysis |
-|--------|-------------|-------------------|
-| Unclassified spend (61%+) | No category management framework in P2P | Blocks consolidation and benchmarking |
-| Unit prices below £0.01 | Quantity entered in value field (AP input error) | Disables H4 price variance |
-| Supplier name variants | No master data governance | Understates supplier concentration |
-| No site/cost centre | BU spend accountability not enforced | Blocks H1 site analysis |
-| High zero-VAT share | Multi-jurisdiction operation | Requires tax review before commercial action |
+// Tables (all use DS.sups, respect filters + sort state)
+buildSecTable()                // Sectors breakdown table (t-sectors)
+buildSupTaxTable()             // Supplier signals table (t-suppliers)
+buildFilteredRawTable()        // Raw data table (raw-tbody)
 
----
+// AP
+initAP()                       // Build AP Analysis tab
+initAPInsight()                // Build AP Insight tab
 
-## Saving estimates — required disclaimer
+// Sort state (independent per table)
+SEC_SORT  = {col:null, dir:-1} // Sectors table
+SUP_SORT  = {col:null, dir:-1} // Supplier Signals table
+RAW_SORT  = {col:null, dir:-1} // Raw Data table
 
-All saving ranges produced by this tool are derived from embedded procurement heuristics calibrated to construction, engineering, and infrastructure sector benchmarks. They are directional hypotheses, not audited projections.
+// Formatter
+fMg(v)                         // £ money formatter — always use this in extensions
 
-**No saving figure from this tool should be:**
-- Reported to stakeholders as a confirmed or committed saving
-- Included in a business case without individual validation
-- Communicated to a supplier before contract and market data have been reviewed
-- Used as a basis for headcount or budget decisions
 
-PSL accepts no liability for decisions taken on the basis of indicative figures without completion of the recommended validation steps.
+Building a New Client Version
 
----
 
-## Data requirements
+Start from SPIE-demo.html — this is the clean base. Never modify it directly; copy it first.
+Prepare the data — from the client's invoice export, build:
 
-Minimum to run the tool:
+DS.sups array (one entry per supplier, fields as above)
+DS.sites array (one entry per site)
+DS.sectors array (derived from DS.sups grouped by CH category)
+DS.summary object
+DS.monthly array (YYYY-MM format — critical, must be full year format)
+AP object (all fields listed above)
 
-- Invoice line export with: supplier name, supplier reference, description, gross value, VAT value, quantity, date
 
-Significantly improves analysis:
 
-- Site / cost centre / project code per invoice line
-- Prior year spend in the same format
-- Contract register or preferred supplier list
-- Agreed unit prices / rate cards per supplier
-- PO vs. non-PO flag per invoice line
-- Corrected unit prices (after AP review)
-- FX normalisation table for multi-currency datasets
-- Supplier legal entity master
+Critical: guard the sector remap — the demo has a line that remaps DS.sectors from DS.cats. If DS.cats is empty (it usually is in client builds), this wipes your sector data. The guard is already in place:
 
----
 
-## Roadmap
+javascript   if(DS.cats && DS.cats.length > 0) { DS.sectors = DS.cats.map(...); }
 
-- **v0.5** — Automated supplier name deduplication and legal entity matching
-- **v0.5** — FX normalisation for multi-currency datasets
-- **v0.6** — Prior year comparison (H2 baseline) when second dataset is provided
-- **v0.6** — Cost centre / site dimension support (unlocks H1 in full)
-- **v1.0** — Category taxonomy auto-classification against UK SIC codes
 
----
+Replace DS and AP blocks in block 2 using a build script (Python recommended).
+Rebuild the raw-tbody with all suppliers as static HTML rows.
+Update the version label — search for the tb-brand div and update the text.
+Test in Edge from file:// — open F12 console, click every tab, check for errors.
 
-## Prepared by
 
-PSL — Procurement Sustainability Technology Education
 
-This tool is analyst-operated and confidential. It is not licensed for redistribution or self-serve client access without PSL authorisation.
+Known Issues & Gotchas
+
+IssueCauseFixBlank sector/YOY chartsDS.sectors wiped by DS.cats.map() at runtimeGuard with DS.cats.length > 0 checkCharts render at 0×0buildCharts() called before browser layoutDouble requestAnimationFrame in nav()Canvas already in useNo destroy before re-creating chartChart.getChart(el)?.destroy() before new Chart()fM is not a functionconst fM only scoped to overview blockUse fMg() — the global formatter in extensionsSEC_FILTER is undefinedExtension JS not loadedExtension block must come after init callfile:// security warning in EdgeBrowser behaviour for local filesHarmless console warning; disappears when served from any web serverAP signals blankAP.peak_hour_pct missing from AP objectEnsure all AP fields are populated including peak_hour_pct, zero_vat_pct24/25
+
+
+GitHub Setup
+
+bash# Clone the repo
+git clone https://github.com/your-org/psl-spie.git
+cd psl-spie
+
+# Copy files in
+cp SPIE_Demo_V3.html .
+cp SPIE-demo.html .
+cp Category_Mapping_file.xlsx .
+cp README.md .
+
+# Commit
+git add .
+git commit -m "SPIE V3 — KHC MVP release"
+git push origin main
+
+Repository structure recommendation:
+
+psl-spie/              ← public or internal repo
+├── SPIE_Demo_V3.html  ← safe for GitHub Pages
+├── SPIE-demo.html     ← clean base template
+├── Category_Mapping_file.xlsx
+└── README.md
+
+psl-spie-clients/      ← private repo (never public)
+└── KHC/
+    └── SPIE_KHC_2425.html
+
+GitHub Pages (free hosting): Repository Settings → Pages → Source: main branch → root. SPIE_Demo_V3.html becomes live at your-org.github.io/psl-spie/SPIE_Demo_V3.html instantly.
+
+
+Data Provenance — KHC 2024–25
+
+MetricValueSourceKingsley Healthcare Workday invoice exportPeriodSep 2024 – Dec 2025 (16 months)Raw rows307,821 invoice linesValid rows (GBP, Approved/Paid)296,408Total spend£186.8MSuppliers1,358Sites51No-PO rate15.0%Day-1 processing72.6%Outstanding balance£2.42MCredits£11.47MTaxonomy match1,351 / 1,358 (99%)Top supplierBrakes Bros Ltd — £46M (Food / Wholesale & Retail)
+
+
+PSL · Spend Procurement Intelligence Engine · June 2026
